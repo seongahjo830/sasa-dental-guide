@@ -1,0 +1,119 @@
+/* ===== 덴트웹 차트 데모 · 온보딩 가이드 투어 (공용) ===== */
+:root{
+  --dt-accent:#1D4ED8; --dt-accent2:#7C3AED; --dt-ink:#211E19;
+}
+.dt-mask{position:fixed;inset:0;z-index:2147483000;pointer-events:none;}
+.dt-spot{position:fixed;border-radius:14px;
+  box-shadow:0 0 0 9999px rgba(17,18,26,.62);
+  transition:all .34s cubic-bezier(.4,.0,.2,1);pointer-events:none;}
+.dt-ring{position:fixed;border:2.5px solid var(--dt-accent);border-radius:15px;
+  box-shadow:0 0 0 4px rgba(29,78,216,.22),0 10px 30px -8px rgba(29,78,216,.5);
+  transition:all .34s cubic-bezier(.4,.0,.2,1);pointer-events:none;}
+
+/* 진행중인 "직접 해보세요" 비콘 */
+.dt-beacon{position:fixed;z-index:2147483050;width:26px;height:26px;border-radius:50%;
+  pointer-events:none;transform:translate(-50%,-50%);}
+.dt-beacon::before,.dt-beacon::after{content:"";position:absolute;inset:0;border-radius:50%;
+  background:var(--dt-accent);}
+.dt-beacon::before{animation:dt-ping 1.5s cubic-bezier(0,0,.2,1) infinite;opacity:.55;}
+.dt-beacon::after{transform:scale(.42);box-shadow:0 0 0 3px #fff;}
+@keyframes dt-ping{0%{transform:scale(.5);opacity:.7}80%,100%{transform:scale(1.7);opacity:0}}
+
+/* 말풍선 카드 */
+.dt-pop{position:fixed;z-index:2147483060;max-width:336px;width:max-content;
+  background:#fff;color:var(--dt-ink);border-radius:18px;
+  box-shadow:0 24px 60px -16px rgba(17,18,26,.5),0 4px 14px -6px rgba(17,18,26,.3);
+  padding:18px 19px 15px;pointer-events:auto;
+  font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  opacity:0;transform:translateY(6px) scale(.98);transition:opacity .26s,transform .26s;}
+.dt-pop.in{opacity:1;transform:none;}
+.dt-pop .dt-arrow{position:absolute;width:15px;height:15px;background:#fff;transform:rotate(45deg);
+  box-shadow:-3px -3px 8px -4px rgba(0,0,0,.12);}
+.dt-pop .dt-kick{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;
+  letter-spacing:.02em;color:var(--dt-accent);background:#EEF2FF;border-radius:999px;padding:3px 10px;margin-bottom:10px;}
+.dt-pop h4{margin:0 0 6px;font-size:17.5px;font-weight:800;letter-spacing:-.02em;line-height:1.35;}
+.dt-pop p{margin:0;font-size:14.5px;line-height:1.66;color:#46423b;}
+.dt-pop p b{color:var(--dt-ink);font-weight:800;
+  background:linear-gradient(transparent 62%,rgba(253,219,110,.55) 62%);}
+.dt-try{display:inline-flex;align-items:center;gap:6px;margin-top:11px;font-size:13px;font-weight:800;
+  color:var(--dt-accent2);background:#F3EEFC;border-radius:9px;padding:6px 11px;}
+.dt-try .h{animation:dt-nudge 1.1s ease-in-out infinite;}
+@keyframes dt-nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
+
+.dt-skip{position:absolute;top:11px;right:13px;font:inherit;font-size:18px;line-height:1;color:#b3ada1;
+  background:none;border:none;cursor:pointer;padding:3px;border-radius:7px;}
+.dt-skip:hover{color:#6B6760;background:#f3f1ec;}
+
+/* ===== 항상 같은 자리 = 화면 하단 고정 컨트롤 바 (다음·다음·완료 연타) ===== */
+.dt-bar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:2147483070;
+  display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #ECE8E1;border-radius:16px;
+  padding:9px 11px 9px 13px;box-shadow:0 18px 44px -14px rgba(17,18,26,.5),0 3px 10px -5px rgba(17,18,26,.3);
+  font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  opacity:0;transition:opacity .25s;}
+.dt-bar.in{opacity:1;}
+.dt-mid{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:84px;}
+.dt-dots{display:flex;gap:5px;align-items:center;}
+.dt-dots i{width:6px;height:6px;border-radius:50%;background:#DAD6CE;transition:all .25s;}
+.dt-dots i.on{background:var(--dt-accent);width:18px;border-radius:4px;}
+.dt-step{font-size:11.5px;font-weight:800;color:#a39d92;letter-spacing:.02em;}
+.dt-b{font:inherit;font-weight:800;border-radius:11px;cursor:pointer;border:1px solid transparent;
+  transition:transform .1s,background .15s,border-color .15s;line-height:1;white-space:nowrap;}
+.dt-b:active{transform:scale(.95);}
+.dt-b.prev{font-size:13.5px;padding:11px 15px;background:#fff;color:#6B6760;border-color:#E7E3DC;}
+.dt-b.prev:hover{border-color:#cfc9bf;}
+.dt-b.prev.off{visibility:hidden;}                    /* 1번째 단계 — 자리는 차지(다음 버튼 위치 고정) */
+.dt-b.next{font-size:15px;padding:13px 22px;background:var(--dt-accent);color:#fff;
+  box-shadow:0 10px 22px -8px rgba(29,78,216,.75);min-width:104px;text-align:center;}
+.dt-b.prev{min-width:60px;text-align:center;}
+.dt-b.next:hover{background:#1742bf;}
+.dt-bar .dt-x{font:inherit;font-size:13px;font-weight:700;color:#b3ada1;background:none;border:none;
+  cursor:pointer;padding:8px 4px 8px 0;}
+.dt-bar .dt-x:hover{color:#6B6760;}
+
+/* 환영 / 완료 모달 */
+.dt-scrim{position:fixed;inset:0;z-index:2147483040;background:rgba(17,18,26,.5);
+  backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px;
+  opacity:0;transition:opacity .3s;}
+.dt-scrim.in{opacity:1;}
+.dt-card{max-width:430px;width:100%;background:#fff;border-radius:24px;padding:30px 30px 26px;text-align:center;
+  box-shadow:0 40px 90px -24px rgba(17,18,26,.6);
+  font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  transform:translateY(14px) scale(.97);opacity:0;transition:transform .34s cubic-bezier(.2,.8,.2,1),opacity .34s;}
+.dt-scrim.in .dt-card{transform:none;opacity:1;}
+.dt-emoji{width:70px;height:70px;border-radius:22px;margin:0 auto 16px;font-size:34px;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#EEF2FF,#F3EEFC);}
+.dt-card h3{margin:0 0 9px;font-size:23px;font-weight:900;letter-spacing:-.03em;color:var(--dt-ink);line-height:1.3;}
+.dt-card .lead{margin:0 0 18px;font-size:15px;color:#5a554c;line-height:1.66;}
+.dt-list{text-align:left;display:flex;flex-direction:column;gap:9px;margin:0 0 22px;}
+.dt-list .li{display:flex;gap:11px;align-items:flex-start;font-size:14.5px;color:#3a352e;line-height:1.5;}
+.dt-list .li .n{flex:none;width:25px;height:25px;border-radius:9px;background:#EEF2FF;color:var(--dt-accent);
+  font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.dt-cta{display:flex;flex-direction:column;gap:9px;}
+.dt-cta .go{font:inherit;font-size:16px;font-weight:800;color:#fff;background:var(--dt-accent);
+  border:none;border-radius:14px;padding:14px;cursor:pointer;box-shadow:0 14px 30px -12px rgba(29,78,216,.8);
+  transition:transform .12s;}
+.dt-cta .go:active{transform:scale(.98);}
+.dt-cta .no{font:inherit;font-size:13.5px;font-weight:700;color:#8a857c;background:none;border:none;cursor:pointer;padding:6px;}
+.dt-cta .no:hover{color:#5a554c;}
+
+/* 다시보기 버튼 */
+.dt-replay{position:fixed;top:13px;right:13px;z-index:2147482000;display:inline-flex;align-items:center;gap:6px;
+  background:#fff;border:1px solid #E7E3DC;border-radius:999px;padding:7px 13px 7px 11px;cursor:pointer;
+  font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-size:12.5px;font-weight:800;color:#5a554c;box-shadow:0 6px 18px -8px rgba(30,25,15,.28);
+  transition:border-color .15s,color .15s,transform .12s;}
+.dt-replay:hover{border-color:var(--dt-accent);color:var(--dt-accent);transform:translateY(-1px);}
+.dt-replay .ic{font-size:14px;}
+
+@media(max-width:560px){
+  .dt-pop{max-width:calc(100vw - 28px);}
+  .dt-card{padding:26px 22px 22px;}
+  .dt-replay{font-size:0;padding:9px;} .dt-replay .ic{font-size:16px;} .dt-replay .tx{display:none;}
+  .dt-bar{left:12px;right:12px;bottom:12px;transform:none;justify-content:space-between;}
+  .dt-b.next{flex:1;text-align:center;}
+}
+@media(prefers-reduced-motion:reduce){
+  .dt-spot,.dt-ring,.dt-pop,.dt-card,.dt-scrim{transition:none;}
+  .dt-beacon::before{animation:none;} .dt-try .h{animation:none;}
+}
