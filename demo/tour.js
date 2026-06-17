@@ -1,53 +1,67 @@
 /* ===== 덴트웹 차트 데모 · 온보딩 가이드 투어 엔진 (공용·무의존) =====
-   사용법: 페이지에서  startDentTour({id, welcome:{...}, steps:[...], finish:{...}})
    - 첫 방문(또는 ?tour=1 / #tour)에 자동 시작 · localStorage로 1회만 자동
    - 우상단 "둘러보기 다시보기" 버튼으로 언제든 재생
+   - ⭐ 다음/이전/완료 버튼은 '화면 하단 고정 바'에 항상 같은 자리 → 연타로 넘기기 가능
+     (읽고 싶으면 말풍선 읽고 같은 자리 클릭 / Enter·→ 로도 진행)
    step: { el:'CSS선택자' 또는 ()=>Element, kick, title, body, place:'auto|top|bottom|left|right',
-           tryText:'직접 해보세요 문구', advanceOnClick:true, before:fn, pad:px }
+           tryText, advanceOnClick:true, before:fn, pad:px }
 */
 (function(){
   if(window.__dentTour) return;
   var T = window.__dentTour = {};
-  var raf=null, active=false, steps=[], idx=0, cfg=null, cleanups=[];
+  var active=false, steps=[], idx=0, cfg=null, cleanups=[];
 
   function $(sel){ try{ return typeof sel==='function'? sel() : document.querySelector(sel);}catch(e){return null;} }
   function el(tag,cls,html){ var d=document.createElement(tag); if(cls)d.className=cls; if(html!=null)d.innerHTML=html; return d; }
   function lsKey(id){ return 'dentTour:'+id; }
 
-  /* ---------- 환영 모달 ---------- */
-  function welcome(){
-    var w=cfg.welcome||{};
+  /* ---------- 환영 / 완료 모달 ---------- */
+  function modal(opts, onGo, onSkip){
     var scrim=el('div','dt-scrim');
-    var bullets=(w.bullets||[]).map(function(b,i){
+    var bullets=(opts.bullets||[]).map(function(b,i){
       return '<div class="li"><span class="n">'+(i+1)+'</span><span>'+b+'</span></div>'; }).join('');
     scrim.innerHTML='<div class="dt-card" role="dialog" aria-modal="true">'+
-      '<div class="dt-emoji">'+(w.emoji||'🧭')+'</div>'+
-      '<h3>'+(w.title||'둘러보기')+'</h3>'+
-      (w.lead?'<p class="lead">'+w.lead+'</p>':'')+
+      '<div class="dt-emoji">'+(opts.emoji||'🧭')+'</div>'+
+      '<h3>'+(opts.title||'둘러보기')+'</h3>'+
+      (opts.lead?'<p class="lead">'+opts.lead+'</p>':'')+
       (bullets?'<div class="dt-list">'+bullets+'</div>':'')+
-      '<div class="dt-cta"><button class="go">'+(w.cta||'둘러보기 시작')+' →</button>'+
-      '<button class="no">'+(w.skip||'그냥 둘러볼게요')+'</button></div></div>';
+      '<div class="dt-cta"><button class="go">'+(opts.cta||'확인')+'</button>'+
+      (onSkip?'<button class="no">'+(opts.skip||'그냥 둘러볼게요')+'</button>':'')+'</div></div>';
     document.body.appendChild(scrim);
     requestAnimationFrame(function(){ scrim.classList.add('in'); });
-    scrim.querySelector('.go').onclick=function(){ closeScrim(scrim,function(){ run(0); }); };
-    scrim.querySelector('.no').onclick=function(){ closeScrim(scrim,function(){ done(true); }); };
+    function close(cb){ document.removeEventListener('keydown',mk,true); scrim.classList.remove('in'); setTimeout(function(){ scrim.remove(); cb&&cb(); },300); }
+    function mk(e){ if(e.key==='Enter'||e.key==='ArrowRight'){ e.preventDefault(); e.stopPropagation(); close(onGo); }
+                    else if(e.key==='Escape' && onSkip){ e.preventDefault(); close(onSkip); } }
+    document.addEventListener('keydown',mk,true);
+    scrim.querySelector('.go').onclick=function(){ close(onGo); };
+    var no=scrim.querySelector('.no'); if(no) no.onclick=function(){ close(onSkip); };
   }
-  function closeScrim(scrim,cb){ scrim.classList.remove('in'); setTimeout(function(){ scrim.remove(); cb&&cb(); },300); }
 
   /* ---------- 투어 레이어 ---------- */
-  var mask,spot,ring,pop,beacon;
+  var mask,spot,ring,pop,beacon,bar;
   function buildLayer(){
     mask=el('div','dt-mask'); spot=el('div','dt-spot'); ring=el('div','dt-ring');
     mask.appendChild(spot); document.body.appendChild(mask); document.body.appendChild(ring);
     pop=el('div','dt-pop'); document.body.appendChild(pop);
     beacon=el('div','dt-beacon'); beacon.style.display='none'; document.body.appendChild(beacon);
+    bar=el('div','dt-bar'); document.body.appendChild(bar);            // 항상 같은 자리 컨트롤
   }
   function destroyLayer(){
-    [mask,ring,pop,beacon].forEach(function(n){ n&&n.remove(); });
-    mask=spot=ring=pop=beacon=null;
+    [mask,ring,pop,beacon,bar].forEach(function(n){ n&&n.remove(); });
+    mask=spot=ring=pop=beacon=bar=null;
     cleanups.forEach(function(f){ try{f();}catch(e){} }); cleanups=[];
-    if(raf) cancelAnimationFrame(raf); raf=null; active=false;
+    active=false;
     window.removeEventListener('keydown',onKey);
+  }
+
+  /* 하단 고정 바 — 다음 버튼은 항상 오른쪽 같은 위치 */
+  function updateBar(){
+    var dots=steps.map(function(_,i){ return '<i class="'+(i===idx?'on':'')+'"></i>'; }).join('');
+    bar.innerHTML='<button class="dt-b prev'+(idx===0?' off':'')+'">이전</button>'+
+      '<div class="dt-mid"><div class="dt-dots">'+dots+'</div><span class="dt-step">'+(idx+1)+' / '+steps.length+'</span></div>'+
+      '<button class="dt-b next">'+(idx===steps.length-1?'완료 ✓':'다음 →')+'</button>';
+    bar.querySelector('.next').onclick=function(){ go(1); };
+    bar.querySelector('.prev').onclick=function(){ if(idx>0) go(-1); };
   }
 
   function render(){
@@ -55,36 +69,25 @@
     var target = s.el? $(s.el) : null;
     var pad = s.pad!=null? s.pad : 8;
 
-    var bullets=steps.map(function(_,i){ return '<i class="'+(i===idx?'on':'')+'"></i>'; }).join('');
-    var foot='<div class="dt-foot"><div class="dt-dots">'+bullets+'</div><div class="dt-btns">'+
-      (idx>0?'<button class="dt-b prev">이전</button>':'')+
-      '<button class="dt-b next">'+(idx===steps.length-1?'완료 ✓':'다음 →')+'</button></div></div>';
     pop.innerHTML='<button class="dt-skip" aria-label="닫기">×</button>'+
       (s.kick?'<span class="dt-kick">'+s.kick+'</span>':'')+
       '<h4>'+(s.title||'')+'</h4>'+
       (s.body?'<p>'+s.body+'</p>':'')+
-      (s.tryText?'<div class="dt-try"><span>'+s.tryText+'</span><span class="h">👆</span></div>':'')+
-      '<span class="dt-step">'+(idx+1)+' / '+steps.length+'</span>'+foot;
+      (s.tryText?'<div class="dt-try"><span>'+s.tryText+'</span><span class="h">👆</span></div>':'');
     var arrow=el('div','dt-arrow'); pop.appendChild(arrow); pop._arrow=arrow;
-
     pop.querySelector('.dt-skip').onclick=function(){ done(true); };
-    var nx=pop.querySelector('.next'); if(nx) nx.onclick=function(){ go(1); };
-    var pv=pop.querySelector('.prev'); if(pv) pv.onclick=function(){ go(-1); };
 
-    // 클릭으로 진행하는 인터랙티브 스텝
+    updateBar();
+
     if(target && s.advanceOnClick){
       var handler=function(){ setTimeout(function(){ if(active) go(1); },260); };
       target.addEventListener('click',handler,{once:true});
       cleanups.push(function(){ target.removeEventListener('click',handler); });
     }
 
-    if(target && s.scroll!==false){
-      target.scrollIntoView({behavior:'smooth',block:'center'});
-    }
+    if(target && s.scroll!==false){ target.scrollIntoView({behavior:'smooth',block:'center'}); }
     pop.classList.remove('in');
     setTimeout(function(){ position(target,pad,s.place||'auto'); pop.classList.add('in'); }, target&&s.scroll!==false?180:0);
-
-    // 레이아웃 변동(스크롤 애니메이션·상세패널 펼침 등)을 몇 차례만 따라잡음 — 상시 rAF 금지(렌더러 점유 방지)
     [120,300,560,900].forEach(function(ms){
       setTimeout(function(){ if(active && idx===myIdx) position($(s.el),pad,s.place||'auto'); }, ms);
     });
@@ -92,12 +95,11 @@
 
   function position(target,pad,place){
     if(!spot) return;
-    if(!target){ // 타깃 없음 → 화면 중앙(예외)
+    if(!target){ // 타깃 없음 → 화면 중앙 위쪽
       spot.style.width=spot.style.height='0'; spot.style.left='50%'; spot.style.top='50%';
-      ring.style.display='none'; beacon.style.display='none';
-      pop._arrow.style.display='none';
+      ring.style.display='none'; beacon.style.display='none'; pop._arrow.style.display='none';
       pop.style.left=(innerWidth/2-pop.offsetWidth/2)+'px';
-      pop.style.top=(innerHeight/2-pop.offsetHeight/2)+'px';
+      pop.style.top=Math.max(20,innerHeight*0.28-pop.offsetHeight/2)+'px';
       return;
     }
     var r=target.getBoundingClientRect();
@@ -106,14 +108,14 @@
     ring.style.display='block'; ring.style.left=(x-2)+'px'; ring.style.top=(y-2)+'px';
     ring.style.width=(w+4)+'px'; ring.style.height=(h+4)+'px';
 
-    var pw=pop.offsetWidth, ph=pop.offsetHeight, gap=16, m=10;
+    var pw=pop.offsetWidth, ph=pop.offsetHeight, gap=16, m=10, barGuard=92; // 하단 바 영역 피하기
     var pl=place;
     if(pl==='auto'){
-      if(innerHeight-r.bottom > ph+gap+m) pl='bottom';
+      if(innerHeight-r.bottom > ph+gap+m+barGuard) pl='bottom';
       else if(r.top > ph+gap+m) pl='top';
       else if(innerWidth-r.right > pw+gap+m) pl='right';
       else if(r.left > pw+gap+m) pl='left';
-      else pl='bottom';
+      else pl='top';
     }
     var px,py, arr=pop._arrow; arr.style.display='block';
     if(pl==='bottom'||pl==='top'){
@@ -122,16 +124,14 @@
       px=Math.max(m,Math.min(px,innerWidth-pw-m));
       var ax=r.left+r.width/2-px-7.5; ax=Math.max(14,Math.min(ax,pw-30));
       arr.style.left=ax+'px'; arr.style.right='';
-      if(pl==='bottom'){ arr.style.top='-7px'; arr.style.bottom=''; }
-      else { arr.style.bottom='-7px'; arr.style.top=''; }
+      if(pl==='bottom'){ arr.style.top='-7px'; arr.style.bottom=''; } else { arr.style.bottom='-7px'; arr.style.top=''; }
     } else {
       py=r.top+r.height/2-ph/2;
       px= pl==='right'? x+w+gap : x-pw-gap;
-      py=Math.max(m,Math.min(py,innerHeight-ph-m));
+      py=Math.max(m,Math.min(py,innerHeight-ph-m-barGuard));
       var ay=r.top+r.height/2-py-7.5; ay=Math.max(14,Math.min(ay,ph-30));
       arr.style.top=ay+'px'; arr.style.bottom='';
-      if(pl==='right'){ arr.style.left='-7px'; arr.style.right=''; }
-      else { arr.style.right='-7px'; arr.style.left=''; }
+      if(pl==='right'){ arr.style.left='-7px'; arr.style.right=''; } else { arr.style.right='-7px'; arr.style.left=''; }
     }
     px=Math.max(m,Math.min(px,innerWidth-pw-m));
     py=Math.max(m,Math.min(py,innerHeight-ph-m));
@@ -139,20 +139,17 @@
 
     var s=steps[idx];
     if(s && (s.tryText||s.advanceOnClick)){
-      beacon.style.display='block';
-      beacon.style.left=(r.right-9)+'px'; beacon.style.top=(r.top+9)+'px';
+      beacon.style.display='block'; beacon.style.left=(r.right-9)+'px'; beacon.style.top=(r.top+9)+'px';
     } else beacon.style.display='none';
   }
 
   function go(dir){
-    var s=steps[idx];
     idx+=dir;
     if(idx<0) idx=0;
     if(idx>=steps.length){ done(); return; }
     var ns=steps[idx]; if(ns&&ns.before){ try{ns.before();}catch(e){}}
     render();
   }
-
   function onKey(e){
     if(e.key==='Escape') done(true);
     else if(e.key==='ArrowRight'||e.key==='Enter') go(1);
@@ -167,24 +164,14 @@
     addEventListener('scroll',reposition,{passive:true,capture:true});
     cleanups.push(function(){ removeEventListener('resize',reposition); removeEventListener('scroll',reposition,{capture:true}); });
     render();
+    requestAnimationFrame(function(){ bar && bar.classList.add('in'); });
   }
   function reposition(){ var s=steps[idx]; if(s) position($(s.el), s.pad!=null?s.pad:8, s.place||'auto'); }
 
   function done(skipped){
     try{ localStorage.setItem(lsKey(cfg.id),'1'); }catch(e){}
     destroyLayer();
-    if(!skipped && cfg.finish){ finishCard(); }
-  }
-  function finishCard(){
-    var f=cfg.finish;
-    var scrim=el('div','dt-scrim');
-    scrim.innerHTML='<div class="dt-card"><div class="dt-emoji">'+(f.emoji||'🎉')+'</div>'+
-      '<h3>'+(f.title||'다 둘러봤어요!')+'</h3>'+
-      (f.lead?'<p class="lead">'+f.lead+'</p>':'')+
-      '<div class="dt-cta"><button class="go">'+(f.cta||'직접 써보기')+'</button></div></div>';
-    document.body.appendChild(scrim);
-    requestAnimationFrame(function(){ scrim.classList.add('in'); });
-    scrim.querySelector('.go').onclick=function(){ closeScrim(scrim); };
+    if(!skipped && cfg.finish){ modal(Object.assign({cta:'직접 써보기'},cfg.finish), function(){}); }
   }
 
   /* ---------- 다시보기 버튼 ---------- */
@@ -205,8 +192,7 @@
     replayBtn();
     if(active) return;
     if(forced || !seen){
-      // 페이지 렌더 안정화 후 시작
-      var begin=function(){ if(c.welcome) welcome(); else run(0); };
+      var begin=function(){ if(c.welcome) modal(Object.assign({cta:'둘러보기 시작 →'},c.welcome), function(){ run(0); }, function(){ done(true); }); else run(0); };
       if(document.readyState==='complete') setTimeout(begin, force?60:520);
       else addEventListener('load',function(){ setTimeout(begin,520); });
     }
