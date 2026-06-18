@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>O화O님 전용 — 설득 플로우</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, 'Apple SD Gothic Neo', 'Pretendard', sans-serif;
+  background: #f5f6fa;
+  color: #1a1a2e;
+  min-height: 100vh;
+}
+
+header {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 0 28px;
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.back-btn {
+  display: flex; align-items: center; gap: 6px;
+  color: rgba(255,255,255,0.65); text-decoration: none;
+  font-size: 13px; padding: 5px 10px; border-radius: 8px;
+  transition: background 0.15s;
+}
+.back-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.header-title { font-size: 14px; font-weight: 700; }
+.header-badge {
+  background: rgba(255,165,0,0.2); color: #ffa500;
+  font-size: 11px; font-weight: 700;
+  padding: 4px 10px; border-radius: 20px;
+}
+
+.hero {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d3561 100%);
+  color: #fff;
+  padding: 36px 28px 40px;
+  text-align: center;
+}
+.hero .patient-tag {
+  display: inline-block;
+  background: rgba(255,165,0,0.2); color: #ffa500;
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  padding: 4px 12px; border-radius: 20px; margin-bottom: 14px;
+}
+.hero h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 10px; }
+.hero p { font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.7; }
+
+.flow-tracker {
+  display: flex; justify-content: center; gap: 0;
+  padding: 20px 28px; background: #fff;
+  border-bottom: 1px solid #e8eaed;
+  overflow-x: auto;
+}
+.flow-step {
+  display: flex; align-items: center; gap: 8px;
+  flex-shrink: 0;
+}
+.flow-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #e8eaed; color: #888;
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.flow-dot.active { background: #1a1a2e; color: #fff; }
+.flow-dot.done { background: #4CAF50; color: #fff; }
+.flow-label { font-size: 12px; color: #555; white-space: nowrap; }
+.flow-arrow { color: #d0d5dd; font-size: 16px; margin: 0 4px; flex-shrink: 0; }
+
+.container { max-width: 860px; margin: 0 auto; padding: 40px 28px 80px; }
+
+/* Phase blocks */
+.phase {
+  background: #fff;
+  border-radius: 20px;
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  border: 1.5px solid #e8eaed;
+  position: relative;
+  overflow: hidden;
+}
+.phase::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px; height: 100%;
+}
+.phase-1::before { background: #5c6bc0; }
+.phase-2::before { background: #ef5350; }
+.phase-3::before { background: #ff9800; }
+.phase-4::before { background: #26a69a; }
+.phase-5::before { background: #66bb6a; }
+
+.phase-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 20px;
+}
+.phase-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; flex-shrink: 0;
+}
+.phase-1 .phase-num { background: #ede7f6; color: #5c6bc0; }
+.phase-2 .phase-num { background: #fce4ec; color: #ef5350; }
+.phase-3 .phase-num { background: #fff3e0; color: #ff9800; }
+.phase-4 .phase-num { background: #e0f2f1; color: #26a69a; }
+.phase-5 .phase-num { background: #e8f5e9; color: #66bb6a; }
+
+.phase-title { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; }
+.phase-subtitle { font-size: 12px; color: #888; margin-top: 2px; }
+
+.script-box {
+  background: #f8f9fb;
+  border-left: 3px solid #d0d5dd;
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  margin: 14px 0;
+}
+.script-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  color: #888; text-transform: uppercase; margin-bottom: 6px;
+}
+.script-text {
+  font-size: 14px; color: #333; line-height: 1.75;
+  font-style: italic;
+}
+
+/* Photo Gallery */
+.photo-section {
+  margin: 18px 0;
+}
+.photo-label {
+  font-size: 12px; font-weight: 700; color: #555;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+}
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.photo-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  position: relative;
+  cursor: zoom-in;
+}
+.photo-card img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s;
+}
+.photo-card:hover img { transform: scale(1.05); }
+.photo-card .photo-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  color: #fff; font-size: 11px; font-weight: 600;
+  padding: 20px 8px 8px;
+}
+
+/* Wide panorama */
+.photo-panorama {
+  border-radius: 12px; overflow: hidden; background: #000; cursor: zoom-in;
+  margin: 12px 0;
+}
+.photo-panorama img {
+  width: 100%; height: 200px; object-fit: cover;
+  display: block; transition: transform 0.2s;
+}
+.photo-panorama:hover img { transform: scale(1.02); }
+.panorama-caption {
+  background: #1a1a2e; color: rgba(255,255,255,0.8);
+  font-size: 12px; font-weight: 600; padding: 8px 14px;
+}
+
+/* Urgency stages */
+.urgency-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  margin: 14px 0;
+}
+.urgency-item {
+  border-radius: 14px; padding: 16px 14px; text-align: center;
+}
+.urgency-item.low { background: #fff8e1; border: 1.5px solid #ffe082; }
+.urgency-item.mid { background: #fff3e0; border: 1.5px solid #ffcc02; }
+.urgency-item.high { background: #fce4ec; border: 1.5px solid #f48fb1; }
+.urgency-emoji { font-size: 22px; margin-bottom: 6px; }
+.urgency-name { font-size: 12px; font-weight: 700; color: #333; margin-bottom: 4px; }
+.urgency-desc { font-size: 11px; color: #666; line-height: 1.5; }
+
+/* Loss aversion box */
+.loss-box {
+  background: linear-gradient(135deg, #fce4ec, #ffd7d7);
+  border: 1.5px solid #f48fb1;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin: 14px 0;
+}
+.loss-box .loss-title {
+  font-size: 13px; font-weight: 800; color: #c62828;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+}
+.loss-rows { display: flex; flex-direction: column; gap: 8px; }
+.loss-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: #444; line-height: 1.6;
+}
+.loss-row .bullet { flex-shrink: 0; font-size: 16px; }
+
+/* Objection grid */
+.obj-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+  margin: 14px 0;
+}
+.obj-card {
+  background: #f8f9fb; border: 1px solid #e8eaed;
+  border-radius: 14px; padding: 16px;
+}
+.obj-q { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 8px; }
+.obj-a { font-size: 12.5px; color: #555; line-height: 1.65; }
+.obj-a span { color: #1a1a2e; font-weight: 600; }
+
+/* Checklist */
+.checklist { list-style: none; margin: 10px 0; }
+.checklist li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: #333; line-height: 1.7; margin-bottom: 6px;
+}
+.checklist li .ck { flex-shrink: 0; color: #4CAF50; font-size: 15px; }
+
+/* Lightbox */
+.lightbox {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.92); z-index: 9999;
+  align-items: center; justify-content: center;
+}
+.lightbox.open { display: flex; }
+.lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+.lightbox-close {
+  position: absolute; top: 20px; right: 24px;
+  color: #fff; font-size: 28px; cursor: pointer;
+  background: rgba(255,255,255,0.15); border: none;
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back-btn" href="제작과정.html">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    작업 보드
+  </a>
+  <span class="header-title">O화O님 — 맞춤 설득 플로우</span>
+  <span class="header-badge">⚡ 개인 맞춤</span>
+</header>
+
+<div class="hero">
+  <div class="patient-tag">👤 PATIENT-SPECIFIC</div>
+  <h1>이 환자를 위한<br />최적 설득 순서</h1>
+  <p>O화O님의 실제 구강 사진과 상태를 바탕으로<br />치료 동의를 이끌어내는 5단계 커뮤니케이션 흐름</p>
+</div>
+
+<div class="flow-tracker">
+  <div class="flow-step">
+    <div class="flow-dot active">1</div>
+    <span class="flow-label">구강 투어</span>
+  </div>
+  <span class="flow-arrow">›</span>
+  <div class="flow-step">
+    <div class="flow-dot">2</div>
+    <span class="flow-label">위기감 공유</span>
+  </div>
+  <span class="flow-arrow">›</span>
+  <div class="flow-step">
+    <div class="flow-dot">3</div>
+    <span class="flow-label">로드맵</span>
+  </div>
+  <span class="flow-arrow">›</span>
+  <div class="flow-step">
+    <div class="flow-dot">4</div>
+    <span class="flow-label">거절 응대</span>
+  </div>
+  <span class="flow-arrow">›</span>
+  <div class="flow-step">
+    <div class="flow-dot">5</div>
+    <span class="flow-label">신뢰 클로징</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Phase 1: 구강 투어 -->
+  <div class="phase phase-1">
+    <div class="phase-header">
+      <div class="phase-num">1</div>
+      <div>
+        <div class="phase-title">🔍 구강 투어 — "같이 보아요"</div>
+        <div class="phase-subtitle">해결책 없이 현황만. 판단 강요 X. 공감 우선.</div>
+      </div>
+    </div>
+
+    <div class="script-box">
+      <div class="script-label">💬 오프닝 스크립트</div>
+      <div class="script-text">"O화O님, 지금 찍은 사진이랑 X-ray 같이 한번 보실게요. 오늘은 뭘 해야 한다는 얘기가 아니라, 지금 어떤 상태인지 먼저 같이 확인해보는 거예요."</div>
+    </div>
+
+    <div class="photo-section">
+      <div class="photo-label">📸 오늘 찍은 구내 사진 — 함께 보여주세요</div>
+      <div class="photo-grid">
+        <div class="photo-card" onclick="openLightbox('img/p_occlusal_1.jpg')">
+          <img src="img/p_occlusal_1.jpg" alt="교합면 1" />
+          <div class="photo-caption">교합면 ①</div>
+        </div>
+        <div class="photo-card" onclick="openLightbox('img/p_occlusal_2.jpg')">
+          <img src="img/p_occlusal_2.jpg" alt="교합면 2" />
+          <div class="photo-caption">교합면 ②</div>
+        </div>
+        <div class="photo-card" onclick="openLightbox('img/p_occlusal_3.jpg')">
+          <img src="img/p_occlusal_3.jpg" alt="교합면 3" />
+          <div class="photo-caption">교합면 ③</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <div class="photo-grid">
+          <div class="photo-card" onclick="openLightbox('img/p_buccal_1.jpg')">
+            <img src="img/p_buccal_1.jpg" alt="협면 1" />
+            <div class="photo-caption">협면 ①</div>
+          </div>
+          <div class="photo-card" onclick="openLightbox('img/p_lingual_1.jpg')">
+            <img src="img/p_lingual_1.jpg" alt="설면 1" />
+            <div class="photo-caption">설면 ①</div>
+          </div>
+          <div class="photo-card" onclick="openLightbox('img/p_panorama.jpg')">
+            <img src="img/p_panorama.jpg" alt="파노라마" />
+            <div class="photo-caption">파노라마 X-ray</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="script-box" style="border-left-color:#5c6bc0; background:#f3f0fc;">
+      <div class="script-label">🔑 포인트</div>
+      <div class="script-text">"이 어두운 부분이 보이세요? 이게 지금 어떤 상태인지 설명드릴게요." — 환자가 자기 입 안을 직접 보는 순간, 치료 거부 확률이 급격히 낮아집니다.</div>
+    </div>
+  </div>
+
+  <!-- Phase 2: 위기감 공유 -->
+  <div class="phase phase-2">
+    <div class="phase-header">
+      <div class="phase-num">2</div>
+      <div>
+        <div class="phase-title">⚠️ 위기감 공유 — 손실 프레이밍</div>
+        <div class="phase-subtitle">"지금 안 하면 어떻게 되나요?" — 이 질문에 대답하기</div>
+      </div>
+    </div>
+
+    <div class="urgency-grid">
+      <div class="urgency-item low">
+        <div class="urgency-emoji">🟡</div>
+        <div class="urgency-name">관찰 가능</div>
+        <div class="urgency-desc">지금 당장은 아니지만 진행 중</div>
+      </div>
+      <div class="urgency-item mid">
+        <div class="urgency-emoji">🟠</div>
+        <div class="urgency-name">조기 개입 권장</div>
+        <div class="urgency-desc">지금 하면 간단, 6개월 뒤엔 복잡</div>
+      </div>
+      <div class="urgency-item high">
+        <div class="urgency-emoji">🔴</div>
+        <div class="urgency-name">즉시 처치 필요</div>
+        <div class="urgency-desc">방치 시 신경치료·발치 위험</div>
+      </div>
+    </div>
+
+    <div class="loss-box">
+      <div class="loss-title">🔴 지금 미루면 어떻게 되나요</div>
+      <div class="loss-rows">
+        <div class="loss-row">
+          <span class="bullet">💸</span>
+          <span><strong>비용 2~5배 증가</strong> — 지금 레진 1개 = 5만원, 6개월 뒤 신경치료+크라운 = 50만원+</span>
+        </div>
+        <div class="loss-row">
+          <span class="bullet">🦷</span>
+          <span><strong>치아 손실 가능성</strong> — 신경까지 퍼지면 발치 후 임플란트. 자기 치아는 되돌릴 수 없습니다</span>
+        </div>
+        <div class="loss-row">
+          <span class="bullet">⏱️</span>
+          <span><strong>치료 기간 3~4배</strong> — 지금 2~3회로 끝날 게, 뒤로 미루면 6개월 이상 걸릴 수 있어요</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="script-box">
+      <div class="script-label">💬 손실 프레이밍 스크립트</div>
+      <div class="script-text">"지금 안 하셔도 돼요. 근데 이 부분은 지금 하시면 2회에 끝나는데, 3개월 지나면 신경치료가 필요할 수 있어요. 그렇게 되면 횟수도 비용도 몇 배로 늘어나거든요."</div>
+    </div>
+  </div>
+
+  <!-- Phase 3: 로드맵 -->
+  <div class="phase phase-3">
+    <div class="phase-header">
+      <div class="phase-num">3</div>
+      <div>
+        <div class="phase-title">🗺️ 전체 로드맵 제시</div>
+        <div class="phase-subtitle">언제 끝나는지 보여주면 불안이 사라집니다</div>
+      </div>
+    </div>
+
+    <div class="script-box">
+      <div class="script-label">💬 로드맵 스크립트</div>
+      <div class="script-text">"전체적으로 보면요, 이번 달에 이 두 가지 하고, 다음 달에 이걸 하면, 3개월 안에 전체가 정리돼요. 다 합쳐서 약 OO만원이에요. 치료계획 보고서 드릴게요, 한번 가져가셔서 보세요."</div>
+    </div>
+
+    <div class="photo-section">
+      <div class="photo-label">📋 치료계획 보고서와 함께 보여주세요</div>
+      <div class="photo-panorama" onclick="openLightbox('img/p_panorama.jpg')">
+        <img src="img/p_panorama.jpg" alt="파노라마 X-ray" />
+        <div class="panorama-caption">🦷 파노라마 X-ray — 전체 구강 상태 한눈에</div>
+      </div>
+    </div>
+
+    <ul class="checklist">
+      <li><span class="ck">✓</span><span>순서 1순위 → 2순위 → 3순위 명확하게 설명</span></li>
+      <li><span class="ck">✓</span><span>총 횟수 / 총 비용 / 종료 예상 월 제시</span></li>
+      <li><span class="ck">✓</span><span>치료계획 보고서(링크) 카카오톡으로 전송</span></li>
+    </ul>
+  </div>
+
+  <!-- Phase 4: 거절 응대 -->
+  <div class="phase phase-4">
+    <div class="phase-header">
+      <div class="phase-num">4</div>
+      <div>
+        <div class="phase-title">🛡️ 자주 나오는 거절 응대</div>
+        <div class="phase-subtitle">O화O님이 자주 쓰는 패턴에 맞는 응대</div>
+      </div>
+    </div>
+
+    <div class="obj-grid">
+      <div class="obj-card">
+        <div class="obj-q">💬 "비용이 너무 많이 드는 것 같아요"</div>
+        <div class="obj-a">
+          "지금 이 치료는 OO만원인데요, <span>지금 안 하시면 신경치료+크라운으로 OO만원 이상</span> 될 수 있어요. 지금이 사실 가장 저렴한 시점이에요."
+        </div>
+      </div>
+      <div class="obj-card">
+        <div class="obj-q">💬 "좀 더 생각해볼게요"</div>
+        <div class="obj-a">
+          "물론이죠. <span>보고서 링크</span> 드릴게요, 집에서 천천히 보시고요 — 한 달 정도는 상태 유지되니까 다음 예약 잡아두시면 편해요."
+        </div>
+      </div>
+      <div class="obj-card">
+        <div class="obj-q">💬 "지금은 안 아프던데요"</div>
+        <div class="obj-a">
+          "<span>치과 문제는 아프기 시작하면 이미 늦은 경우가 많아요.</span> 이 사진에서 보시는 이 부분이 지금은 안 아프지만 안쪽은 이미 진행 중이에요."
+        </div>
+      </div>
+      <div class="obj-card">
+        <div class="obj-q">💬 "한꺼번에 너무 많이 해야 하는 건 아닌가요?"</div>
+        <div class="obj-a">
+          "전부 한꺼번에 안 해도 돼요. <span>먼저 이것 하나만</span> 하고, 다음에 또 하나씩 진행하면 돼요. 가장 급한 것부터 순서 알려드릴게요."
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 5: 클로징 -->
+  <div class="phase phase-5">
+    <div class="phase-header">
+      <div class="phase-num">5</div>
+      <div>
+        <div class="phase-title">🤝 신뢰 클로징</div>
+        <div class="phase-subtitle">"오늘 안 해도 괜찮아요" — 압박 없는 마무리</div>
+      </div>
+    </div>
+
+    <div class="script-box">
+      <div class="script-label">💬 클로징 스크립트</div>
+      <div class="script-text">"오늘 바로 안 하셔도 돼요. 보고서 보내드릴게요. 혹시 집에서 보시다가 궁금한 게 생기면 언제든 연락 주세요. 급한 부분 먼저 잡아두시고 싶으시면 오늘 하나만 시작해도 충분해요."</div>
+    </div>
+
+    <ul class="checklist">
+      <li><span class="ck">✓</span><span><strong>티치백(Teach-back)</strong>: "제가 설명드린 거 어떻게 이해하셨어요?" — 환자 입으로 다시 말하게</span></li>
+      <li><span class="ck">✓</span><span><strong>보고서 링크 전송</strong>: 카카오톡으로 QR or URL 전달 → 집에서 보고 결정</span></li>
+      <li><span class="ck">✓</span><span><strong>압박 금지</strong>: "오늘 결정 안 해도 되고요, 다음 예약만 잡아두세요"</span></li>
+      <li><span class="ck">✓</span><span><strong>작은 행동 유도</strong>: "오늘 이거 하나만 하고 가실게요" — 완전 거절보다 부분 동의</span></li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="" />
+</div>
+
+<script>
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+</script>
+
+</body>
+</html>
