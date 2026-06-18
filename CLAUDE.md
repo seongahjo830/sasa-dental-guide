@@ -4,7 +4,7 @@
 - **로컬 경로**: `C:\myhome\sasa-dental-guide\`
 - **GitHub**: https://github.com/seongahjo830/sasa-dental-guide
 - **배포 URL**: https://seongahjo830.github.io/sasa-dental-guide/
-- **배포 방식**: GitHub Pages (main 브랜치 push → 자동 배포, 보통 1~2분 소요)
+- **배포 방식**: GitHub Pages (**master** 브랜치 push → 자동 배포, 보통 1~2분 소요)
 - **빌드 도구 없음**: 순수 정적 HTML/CSS/JS. 빌드 단계 없음. 파일 수정 → git push = 배포 완료.
 
 ---
@@ -61,7 +61,7 @@ sasa-dental-guide/
 cd C:\myhome\sasa-dental-guide
 git add <수정한파일>
 git commit -m "fix: 설명 수정 내용 한 줄"
-git push origin main
+git push origin master
 # → GitHub Pages 자동 배포 (1~2분 후 반영)
 ```
 
@@ -85,6 +85,7 @@ git push origin main
 ---
 
 ## 주의사항
+- 🚫 **새 창/새 탭으로 절대 열지 말 것**: 이 사이트의 모든 내부 링크는 **같은 페이지에서 이동**해야 한다. `<a>`에 `target="_blank"` 금지, JS `window.open(...)` 금지. 새 HTML을 만들거나 링크를 추가할 때도 항상 같은 탭 이동(`href`만). (2026-06-19 차트제작과정.html의 참고자료 링크 9개가 새 창으로 뜨던 것 수정함.)
 - `_백업-*/` 폴더, `*_v0.html` `*_v1.html` 등 버전 파일 = **읽기 전용 백업**, 수정 금지.
 - `.nojekyll` 삭제 금지.
 - 이미지(`img/`, `card/`) 교체 시 파일명 유지 (HTML에서 하드코딩된 경로 다수).
