@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>전자차트(EMR) 제작과정 — 서울사계절치과</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system,'Apple SD Gothic Neo','Pretendard','Noto Sans KR',sans-serif;
+    background: #f4f6f9; color: #1a1a2e;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Top Nav ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    height: 52px; background: #fff;
+    border-bottom: 1px solid #e8eaed;
+    display: flex; align-items: center;
+    padding: 0 20px; gap: 12px;
+  }
+  nav .back-btn {
+    display: flex; align-items: center; gap: 6px;
+    color: #555; text-decoration: none; font-size: 13px;
+    padding: 5px 10px; border-radius: 8px; transition: background .15s;
+  }
+  nav .back-btn:hover { background: #f0f2f5; }
+  nav .nav-title { font-size: 14px; font-weight: 600; letter-spacing: -0.4px; }
+  nav .nav-sub { font-size: 12px; color: #888; margin-left: auto; }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 36px 20px 60px; }
+
+  /* ── Hook ── */
+  .hero-eyebrow {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px;
+    color: #1565C0; text-transform: uppercase; margin-bottom: 10px;
+  }
+  .hero-title { font-size: 26px; font-weight: 800; letter-spacing: -1px; line-height: 1.3; margin-bottom: 12px; }
+  .hero-title em { font-style: normal; color: #1565C0; }
+  .hero-desc { font-size: 14px; color: #555; line-height: 1.7; margin-bottom: 12px; max-width: 640px; }
+  .hero-note {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 12.5px; color: #6b7280;
+    background: #fff; border: 1px solid #e8eaed; border-radius: 999px;
+    padding: 7px 14px;
+  }
+
+  .board-header {
+    display: flex; align-items: baseline; gap: 10px;
+    margin: 36px 0 18px;
+  }
+  .board-header h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.5px; }
+  .board-header .count { font-size: 12px; color: #888; }
+
+  /* ── Card Grid (버튼 보드) ── */
+  .board-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .board-card {
+    background: #fff; border: 1.5px solid #e8eaed; border-radius: 18px;
+    overflow: hidden; cursor: pointer; text-decoration: none;
+    color: inherit; display: block;
+    transition: transform .18s, box-shadow .18s, border-color .18s;
+  }
+  .board-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,.12);
+    border-color: #1a1a2e;
+  }
+  .board-thumb {
+    width: 100%; height: 150px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #0f0f1a 0%, #1565C0 100%);
+  }
+  .board-thumb::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(-45deg, transparent, transparent 20px, rgba(255,255,255,.03) 20px, rgba(255,255,255,.03) 40px);
+  }
+  .board-num-label {
+    position: absolute; top: 12px; left: 12px;
+    background: rgba(255,255,255,.15); color: #fff;
+    font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 8px;
+  }
+  .board-thumb-icon { font-size: 34px; z-index: 1; margin-bottom: 8px; }
+  .board-thumb-text { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.92); z-index: 1; letter-spacing: -0.3px; }
+  .board-info { padding: 16px 18px 18px; }
+  .board-name { font-size: 15px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+  .board-desc { font-size: 12.5px; color: #666; line-height: 1.65; }
+  .board-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+  .board-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .board-tag { background: #f0f2f5; color: #555; font-size: 11px; padding: 3px 8px; border-radius: 10px; }
+  .board-open { font-size: 12px; color: #1a1a2e; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+  .board-card:hover .board-open svg { transform: translateX(2px); }
+  .board-open svg { transition: transform .15s; }
+
+  /* ── 추가 예정 (빈 슬롯) ── */
+  .board-card.coming {
+    border-style: dashed; border-color: #cdd3dd; cursor: default;
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 200px; text-align: center;
+  }
+  .board-card.coming:hover { transform: none; box-shadow: none; border-color: #cdd3dd; }
+  .board-card.coming .ph { color: #9aa3af; font-size: 13px; line-height: 1.7; padding: 24px; }
+  .board-card.coming .ph .plus { font-size: 28px; display: block; margin-bottom: 6px; color: #c2c9d4; }
+
+  @media (max-width: 620px) {
+    .board-grid { grid-template-columns: 1fr; }
+    .hero-title { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="back-btn" href="차트확인.html">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    전자차트로 돌아가기
+  </a>
+  <span style="color:#d0d5dd;font-size:14px;">|</span>
+  <span class="nav-title">전자차트(EMR) 제작과정</span>
+  <span class="nav-sub">서울사계절치과</span>
+</nav>
+
+<div class="wrap">
+
+  <!-- Hook -->
+  <div class="hero-eyebrow">EMR · 제작 기록</div>
+  <h1 class="hero-title">
+    우리 전자차트를 <em>어떻게 만들고 있는지</em>,<br>
+    그 과정을 한 곳에 기록합니다.
+  </h1>
+  <p class="hero-desc">
+    "왜 이렇게 만들었나"를 나중에도 추적할 수 있도록, 차트를 만들며 참고한 설계 원칙·연구 근거·디자인 결정을 카드 하나씩 쌓아 둡니다.
+    아래 버튼을 눌러 각 기록을 펼쳐 보세요.
+  </p>
+  <span class="hero-note">&#128221; 앞으로 버튼(기록)이 계속 추가됩니다.</span>
+
+  <!-- Board -->
+  <div class="board-header">
+    <h2>제작 기록 보드</h2>
+    <span class="count">클릭해서 열기</span>
+  </div>
+
+  <div class="board-grid">
+
+    <!-- 버튼 01: EMR 가독성 가이드 -->
+    <a class="board-card" href="emr-가독성가이드.html">
+      <div class="board-thumb">
+        <span class="board-num-label">01</span>
+        <span class="board-thumb-icon">&#128202;</span>
+        <span class="board-thumb-text">EMR 가독성 가이드</span>
+      </div>
+      <div class="board-info">
+        <div class="board-name">EMR 가독성 가이드</div>
+        <div class="board-desc">5년 치료 기록을 30초 안에 파악하려면?<br>V-모델·확장행·스윔레인 3가지 시각화 구조</div>
+        <div class="board-footer">
+          <div class="board-tags">
+            <span class="board-tag">&#128300; 시각화</span>
+            <span class="board-tag">근거 기반</span>
+          </div>
+          <span class="board-open">열기
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+              <path d="M4 8H12M9 5L12 8L9 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    </a>
+
+    <!-- 추가 예정 슬롯 -->
+    <div class="board-card coming">
+      <div class="ph">
+        <span class="plus">+</span>
+        다음 제작 기록<br>준비 중
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

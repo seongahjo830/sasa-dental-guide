@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EMR 가독성 가이드 — 차트 제작 기록</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system,'Apple SD Gothic Neo','Pretendard','Noto Sans KR',sans-serif;
+    background: #f4f6f9;
+    color: #1a1a2e;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Top Nav ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    height: 52px; background: #fff;
+    border-bottom: 1px solid #e8eaed;
+    display: flex; align-items: center;
+    padding: 0 20px; gap: 12px;
+  }
+  nav .back-btn {
+    display: flex; align-items: center; gap: 6px;
+    color: #555; text-decoration: none; font-size: 13px;
+    padding: 5px 10px; border-radius: 8px; transition: background .15s;
+  }
+  nav .back-btn:hover { background: #f0f2f5; }
+  nav .nav-title { font-size: 14px; font-weight: 600; letter-spacing: -0.4px; }
+  nav .nav-sub { font-size: 12px; color: #888; margin-left: auto; }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  .emr-guide-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #e8f0fe; color: #1565C0;
+    font-size: 11px; font-weight: 700; padding: 4px 10px;
+    border-radius: 20px; letter-spacing: 0.3px; margin-bottom: 12px;
+  }
+  .emr-guide-title { font-size: 24px; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 6px; }
+  .emr-guide-sub { font-size: 14px; color: #666; margin-bottom: 32px; line-height: 1.65; }
+
+  .card {
+    background: #fff; border: 1px solid #e8eaed; border-radius: 16px;
+    padding: 26px 26px 30px; margin-bottom: 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.03);
+  }
+
+  .emr-section { margin-bottom: 0; }
+  .emr-section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .emr-section-icon {
+    width: 40px; height: 40px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 800; flex-shrink: 0;
+  }
+  .emr-section-icon.blue { background: #e8f0fe; color: #1565C0; }
+  .emr-section-icon.green { background: #e8f5e9; color: #2e7d32; }
+  .emr-section-icon.orange { background: #fff3e0; color: #e65100; }
+  .emr-section-name { font-size: 16px; font-weight: 700; letter-spacing: -0.4px; color: #1a1a2e; }
+  .emr-section-en { font-size: 11.5px; color: #888; font-weight: 500; display: block; margin-top: 1px; }
+
+  .emr-body {
+    font-size: 13.5px; line-height: 1.8; color: #333;
+    background: #f8f9fb; border-radius: 10px; padding: 18px 20px;
+  }
+  .emr-body strong { color: #1a1a2e; font-weight: 700; }
+  .emr-tag {
+    display: inline-block; background: #e8f0fe; color: #1565C0;
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+    margin-right: 4px; margin-bottom: 4px;
+  }
+  .emr-tag.green { background: #e8f5e9; color: #2e7d32; }
+  .emr-tag.orange { background: #fff3e0; color: #e65100; }
+  .emr-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .emr-compare-box { background: #fff; border: 1px solid #e8eaed; border-radius: 8px; padding: 12px 14px; }
+  .emr-compare-box .cb-label {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .5px;
+    color: #888; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .emr-compare-box .cb-val { font-size: 12.5px; line-height: 1.65; color: #333; }
+  .emr-compare-box.bad { border-color: #ffcdd2; background: #fff8f8; }
+  .emr-compare-box.good { border-color: #c8e6c9; background: #f9fff9; }
+
+  .sl-grid { display: grid; grid-template-columns: 70px 1fr; gap: 4px; margin-top: 10px; font-size: 11px; }
+  .sl-label { font-weight: 700; border-radius: 6px; padding: 6px 8px; text-align: center; font-size: 10.5px; }
+  .sl-track { border-radius: 6px; padding: 6px 10px; }
+  .sl-track .sl-items { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .sl-chip { color: #fff; border-radius: 4px; padding: 2px 7px; font-size: 11px; }
+  .sl-dash { color: #aaa; }
+
+  .emr-mock-table { margin-top: 10px; background: #fff; border: 1px solid #e8eaed; border-radius: 8px; overflow: hidden; font-size: 12px; }
+  .emr-mock-head { display: grid; grid-template-columns: 90px 60px 1fr 60px; padding: 8px 12px; background: #f0f6ff; font-weight: 700; color: #1565C0; font-size: 11px; letter-spacing: .3px; }
+  .emr-mock-row { display: grid; grid-template-columns: 90px 60px 1fr 60px; padding: 9px 12px; border-top: 1px solid #e8eaed; color: #333; }
+  .emr-mock-detail { padding: 10px 16px; background: #f8f9fb; border-top: 1px solid #e8eaed; color: #555; font-size: 11.5px; line-height: 1.7; }
+
+  .emr-coming {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px; color: #888; padding: 14px 16px;
+    background: #fff; border-radius: 12px; border: 1px dashed #cdd3dd;
+  }
+
+  @media (max-width: 560px) {
+    .emr-compare { grid-template-columns: 1fr; }
+    .emr-mock-head, .emr-mock-row { grid-template-columns: 76px 44px 1fr 56px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="back-btn" href="차트제작과정.html">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    제작과정 보드로
+  </a>
+  <span style="color:#d0d5dd;font-size:14px;">|</span>
+  <span class="nav-title">EMR 가독성 가이드</span>
+  <span class="nav-sub">전자차트 제작 기록 · 서울사계절치과</span>
+</nav>
+
+<div class="wrap">
+
+  <div class="emr-guide-badge">&#128202; EMR 가독성 가이드</div>
+  <div class="emr-guide-title">환자 히스토리, 어떻게 읽어야 빠를까?</div>
+  <div class="emr-guide-sub">
+    EMR은 모든 데이터가 있지만 <strong>읽기 어렵다</strong>는 게 문제다.<br>
+    한 환자의 5년 치료 기록을 30초 안에 파악하려면 — 시각화 구조가 달라야 한다.
+  </div>
+
+  <!-- ① V-모델 -->
+  <div class="card">
+    <div class="emr-section">
+      <div class="emr-section-header">
+        <div class="emr-section-icon blue">V</div>
+        <div>
+          <div class="emr-section-name">V-모델 (V-Model)</div>
+          <span class="emr-section-en">시간 축 &#8596; 중증도 축의 V자 배치</span>
+        </div>
+      </div>
+      <div class="emr-body">
+        <strong>핵심 아이디어:</strong> 시간(X축)과 임상적 중요도(Y축)를 동시에 표현하는 V자형 타임라인.<br><br>
+        <span class="emr-tag">BMC Medical Informatics 2014</span> 연구에서 일반 타임라인보다 <strong>가독성·추론 속도 우수</strong>로 검증됨.<br><br>
+        <strong>치과에 적용하면:</strong>
+        <div class="emr-compare">
+          <div class="emr-compare-box bad">
+            <div class="cb-label">&#10060; 기존 방식</div>
+            <div class="cb-val">날짜순 나열 → 레진 / 신경치료 / 크라운 / 레진… 방문 순서대로 쭉 읽어야 함. 중요한 이벤트가 묻힘.</div>
+          </div>
+          <div class="emr-compare-box good">
+            <div class="cb-label">&#9989; V-모델 방식</div>
+            <div class="cb-val">위로 솟을수록 중요 이벤트(신경치료·임플란트·응급). 아래 = 유지관리. 눈이 봉우리만 먼저 읽음 → 5초 파악.</div>
+          </div>
+        </div>
+        <br>
+        <strong>실무 포인트:</strong> 차트 상단에 "중증도 타임라인 바" 1줄만 올려도 효과. 색상(빨강=응급·근관, 노랑=보철, 초록=예방)으로 즉시 구현 가능.
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 확장행 -->
+  <div class="card">
+    <div class="emr-section">
+      <div class="emr-section-header">
+        <div class="emr-section-icon green">&#8597;</div>
+        <div>
+          <div class="emr-section-name">확장행 (Expandable Row)</div>
+          <span class="emr-section-en">요약 1줄 → 클릭하면 상세 펼침</span>
+        </div>
+      </div>
+      <div class="emr-body">
+        <strong>핵심 아이디어:</strong> 기본은 최소 요약(날짜·치아·술식), 필요한 행만 펼쳐 메모·이미지·처방을 봄.<br><br>
+        <span class="emr-tag green">정보 과부하 차단</span> <span class="emr-tag green">스캔 속도 향상</span><br><br>
+        <strong>왜 효과적인가:</strong> 인간의 시선은 <em>"전체 훑기 → 관심 항목 드릴다운"</em> 순으로 움직인다. 모든 정보를 펼쳐두면 뇌가 필터링에 에너지를 낭비함.<br><br>
+        <strong>설계 예시:</strong>
+        <div class="emr-mock-table">
+          <div class="emr-mock-head">
+            <span>날짜</span><span>치아</span><span>술식</span><span>금액</span>
+          </div>
+          <div class="emr-mock-row">
+            <span>2025.03.12</span><span>#36</span><span>신경치료 2차 &#9660;</span><span>35,000</span>
+          </div>
+          <div class="emr-mock-detail">
+            &#128221; <strong>메모:</strong> 치근단 병소 확인, #36 MB2 발견. 파일 #25 사용.<br>
+            &#128138; <strong>처방:</strong> 아목시실린 250mg&#215;7일, 이부프로펜 400mg<br>
+            &#128247; <strong>방사선:</strong> 수술 전후 PA 2장 첨부됨
+          </div>
+          <div class="emr-mock-row">
+            <span>2025.02.28</span><span>#36</span><span>레진 수복 &#9658;</span><span>80,000</span>
+          </div>
+        </div>
+        <br>
+        <strong>이 차트에서:</strong> 각 방문 행 클릭 시 상세가 펼쳐지는 현재 구조가 바로 확장행 패턴.
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 스윔레인 -->
+  <div class="card">
+    <div class="emr-section">
+      <div class="emr-section-header">
+        <div class="emr-section-icon orange">&#8801;</div>
+        <div>
+          <div class="emr-section-name">스윔레인 형식 (Swimlane)</div>
+          <span class="emr-section-en">진료 카테고리별 평행 트랙</span>
+        </div>
+      </div>
+      <div class="emr-body">
+        <strong>핵심 아이디어:</strong> 수영장 레인처럼 카테고리(보존·보철·치주·교정·외과)를 수평 트랙으로 분리해 시간 흐름을 동시에 봄.<br><br>
+        <span class="emr-tag orange">치료 간 인과관계 파악</span> <span class="emr-tag orange">미완료 치료 추적</span><br><br>
+        <strong>왜 강력한가:</strong> #36 신경치료와 #36 크라운이 <em>서로 다른 레인에서 같은 시간대에 진행</em>됨을 한눈에 봄. 크라운이 왜 지연됐는지, 잇몸치료와 보철이 얼마나 겹쳤는지 즉시 파악.<br><br>
+        <strong>레이아웃 예시:</strong>
+        <div class="sl-grid">
+          <div class="sl-label" style="background:#e8f0fe;color:#1565C0;">보존</div>
+          <div class="sl-track" style="background:#e8f0fe;">
+            <div class="sl-items">
+              <span class="sl-chip" style="background:#1565C0;">레진 #46</span>
+              <span class="sl-dash">────────</span>
+              <span class="sl-chip" style="background:#1565C0;">신경 #36 &#215;3회</span>
+            </div>
+          </div>
+          <div class="sl-label" style="background:#e8f5e9;color:#2e7d32;">보철</div>
+          <div class="sl-track" style="background:#e8f5e9;">
+            <div class="sl-items">
+              <span class="sl-dash" style="margin-left:20px;">─────</span>
+              <span class="sl-chip" style="background:#2e7d32;">크라운 #36</span>
+            </div>
+          </div>
+          <div class="sl-label" style="background:#fff3e0;color:#e65100;">치주</div>
+          <div class="sl-track" style="background:#fff3e0;">
+            <div class="sl-items">
+              <span class="sl-chip" style="background:#e65100;">스케일링</span>
+              <span class="sl-dash">──</span>
+              <span class="sl-chip" style="background:#e65100;">잇몸치료 #36</span>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:6px;">&#8592; 과거 ─────────────────────────────────── 최근 &#8594;</div>
+        <br>
+        <strong>리콜 연결:</strong> 스윔레인에서 "잇몸치료 레인이 끊겼다" = 리콜 누락 신호. 레인 공백이 눈에 즉시 보임 → 리콜 타깃 자동 식별 가능.
+      </div>
+    </div>
+  </div>
+
+  <div class="emr-coming">
+    &#9203; 추가 예정: 히트맵 뷰 / 치아별 개인 타임라인 / 비용 흐름 시각화
+  </div>
+
+</div>
+
+</body>
+</html>
