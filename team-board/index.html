@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>팀 프로젝트 보드 — 서울사계절치과</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Apple SD Gothic Neo','Pretendard','Noto Sans KR',sans-serif;background:#f5f6f8;color:#101828;min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* ===== 로그인 게이트 ===== */
+#gate{position:fixed;inset:0;z-index:9999;background:linear-gradient(145deg,#f5f6f8 0%,#eef2ff 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
+#gate.hidden{display:none;}
+.gate-card{width:100%;max-width:380px;background:#fff;border:1px solid #e8eaed;border-radius:20px;padding:36px 32px 32px;box-shadow:0 12px 40px rgba(16,24,40,.08);}
+.gate-logo{font-size:32px;text-align:center;margin-bottom:8px;}
+.gate-title{font-size:18px;font-weight:800;letter-spacing:-.5px;text-align:center;margin-bottom:4px;}
+.gate-sub{font-size:12.5px;color:#667085;text-align:center;margin-bottom:28px;letter-spacing:-.2px;}
+.gate-label{display:block;font-size:11.5px;font-weight:700;color:#475467;margin-bottom:7px;letter-spacing:-.2px;}
+.gate-input{width:100%;padding:12px 14px;border:1.5px solid #e8eaed;border-radius:11px;font-size:15px;font-family:inherit;letter-spacing:.15em;text-align:center;transition:border-color .15s,box-shadow .15s;}
+.gate-input:focus{outline:none;border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.15);}
+.gate-btn{width:100%;margin-top:14px;padding:13px;background:#101828;color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:background .15s,transform .1s;}
+.gate-btn:hover{background:#344054;}
+.gate-btn:active{transform:scale(.98);}
+.gate-err{font-size:12px;color:#f04438;font-weight:600;text-align:center;margin-top:12px;min-height:18px;letter-spacing:-.2px;}
+.gate-hint{font-size:11px;color:#98a2b3;text-align:center;margin-top:20px;letter-spacing:-.2px;line-height:1.5;}
+
+#app{display:none;}
+#app.unlocked{display:block;}
+
+nav{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid #e8eaed;display:flex;align-items:center;padding:0 24px;height:52px;gap:12px;}
+.nav-title{font-size:14px;font-weight:700;color:#111;letter-spacing:-.4px;}
+.nav-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:#eef2ff;color:#4f46e5;letter-spacing:-.2px;}
+.nav-date{margin-left:auto;font-size:11.5px;color:#98a2b3;}
+.logout-btn{font-size:12px;font-weight:600;color:#667085;background:#f5f6f8;border:1px solid #e8eaed;border-radius:8px;padding:5px 11px;cursor:pointer;font-family:inherit;transition:background .15s;}
+.logout-btn:hover{background:#eef2ff;color:#4f46e5;}
+
+main{max-width:1080px;margin:0 auto;padding:32px 20px 80px;}
+.head{margin-bottom:22px;}
+h1{font-size:21px;font-weight:800;letter-spacing:-.6px;margin-bottom:5px;}
+.sub{font-size:12.5px;color:#667085;letter-spacing:-.2px;}
+
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;}
+@media(max-width:680px){.kpis{grid-template-columns:repeat(2,1fr);}}
+.kpi{background:#fff;border:1px solid #e8eaed;border-radius:14px;padding:15px 16px;}
+.kpi-label{font-size:11px;color:#667085;font-weight:600;letter-spacing:-.2px;margin-bottom:7px;}
+.kpi-val{font-size:21px;font-weight:800;letter-spacing:-.8px;line-height:1;}
+.kpi-meta{font-size:11px;color:#98a2b3;margin-top:6px;letter-spacing:-.2px;}
+.kpi-val .u{font-size:12px;font-weight:700;color:#98a2b3;margin-left:1px;}
+.tone-blue .kpi-val{color:#3b82f6;} .tone-green .kpi-val{color:#16a34a;}
+.tone-amber .kpi-val{color:#f59e0b;} .tone-ink .kpi-val{color:#101828;}
+
+.section-label{font-size:12px;font-weight:800;color:#344054;letter-spacing:-.3px;margin:0 2px 11px;display:flex;align-items:center;gap:7px;}
+.section-label::after{content:'';flex:1;height:1px;background:#e8eaed;}
+
+.cal{background:#fff;border:1px solid #e8eaed;border-radius:16px;padding:16px 16px 10px;margin-bottom:28px;}
+.cal-top{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:0 2px;}
+.cal-month{font-size:15px;font-weight:800;letter-spacing:-.4px;}
+.cal-legend{margin-left:auto;display:flex;gap:12px;flex-wrap:wrap;}
+.lg{display:flex;align-items:center;gap:5px;font-size:11px;color:#667085;font-weight:600;}
+.lg .swatch{width:9px;height:9px;border-radius:3px;}
+.sw-recall{background:#6366f1;} .sw-ins{background:#16a34a;}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.dow{text-align:center;font-size:10.5px;font-weight:700;color:#98a2b3;padding:4px 0 6px;}
+.dow.sun{color:#f04438;} .dow.sat{color:#3b82f6;}
+.day{min-height:62px;border-radius:9px;border:1px solid #f0f1f3;padding:5px 6px;background:#fcfcfd;position:relative;}
+.day.out{background:transparent;border-color:transparent;}
+.day .num{font-size:11px;font-weight:700;color:#475467;}
+.day.out .num{color:#cdd2db;}
+.day.today{border-color:#101828;border-width:1.5px;background:#fff;box-shadow:0 1px 4px rgba(16,24,40,.08);}
+.day.today .num{background:#101828;color:#fff;border-radius:6px;padding:1px 6px;display:inline-block;}
+.ev{margin-top:4px;font-size:9.5px;font-weight:700;line-height:1.25;padding:3px 5px;border-radius:5px;letter-spacing:-.3px;}
+.ev-recall{background:#eef2ff;color:#4f46e5;}
+.ev-recall.done{background:#f1f3fa;color:#9aa0b3;text-decoration:line-through;}
+.ev-recall.now{background:#6366f1;color:#fff;}
+.ev-ins{background:#dcfce7;color:#15803d;}
+@media(max-width:680px){
+  .day{min-height:50px;padding:4px 4px;}
+  .ev{font-size:8px;padding:2px 3px;}
+}
+
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+@media(max-width:820px){.board{grid-template-columns:1fr;}}
+.col{background:#fff;border:1px solid #e8eaed;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;}
+.col-head{padding:14px 16px 12px;border-bottom:1px solid #f0f1f3;display:flex;align-items:center;gap:8px;}
+.col-icon{font-size:16px;line-height:1;}
+.col-name{font-size:14px;font-weight:800;letter-spacing:-.4px;}
+.col-status{margin-left:auto;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;}
+.s-wip{background:#dcfce7;color:#16a34a;}
+.s-fb{background:#eef2ff;color:#4f46e5;}
+.s-empty{background:#f1f5f9;color:#94a3b8;}
+.col-accent{height:3px;}
+.acc-recall{background:#6366f1;} .acc-ins{background:#16a34a;} .acc-emr{background:#e5e7eb;}
+
+.col-body{padding:12px 12px 14px;display:flex;flex-direction:column;gap:9px;min-height:90px;}
+.card{border-radius:11px;padding:11px 13px;background:#f9fafb;border:1px solid #eaecf0;}
+.card-top{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.card-date{font-size:10.5px;font-weight:700;color:#667085;display:flex;align-items:center;gap:5px;}
+.dot-day{width:5px;height:5px;border-radius:50%;background:#98a2b3;display:inline-block;}
+.dday{margin-left:auto;font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;letter-spacing:-.3px;}
+.dday.past{background:#f1f3f5;color:#98a2b3;}
+.dday.soon{background:#fef3c7;color:#b45309;}
+.dday.now{background:#6366f1;color:#fff;}
+.dday.norm{background:#e0e7ff;color:#4338ca;}
+.card-text{font-size:13px;font-weight:600;color:#1d2939;letter-spacing:-.3px;line-height:1.45;}
+.card-note{font-size:11px;color:#f59e0b;font-weight:600;margin-top:5px;}
+.card.done{background:#fbfbfc;border-color:#f0f1f3;}
+.card.done .card-text{color:#98a2b3;}
+.card.done .card-date{color:#b0b7c3;}
+.card.now{background:#f5f3ff;border-color:#c7d2fe;}
+.card.now .card-date{color:#4f46e5;}
+.card.now .dot-day{background:#6366f1;}
+.card.wip{background:#f0fdf4;border-color:#bbf7d0;}
+.card.wip .card-date{color:#16a34a;}
+.card.wip .dot-day{background:#22c55e;}
+.empty-msg{font-size:12.5px;color:#c8cbd0;text-align:center;padding:30px 0;letter-spacing:-.2px;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-logo">🗂️</div>
+    <div class="gate-title">팀 프로젝트 보드</div>
+    <div class="gate-sub">서울사계절치과 · 리콜 · 보험청구 · EMR</div>
+    <label class="gate-label" for="pw">비밀번호</label>
+    <input class="gate-input" id="pw" type="password" inputmode="numeric" autocomplete="off" placeholder="••••" maxlength="20"/>
+    <button class="gate-btn" id="pw-btn" type="button">입장</button>
+    <div class="gate-err" id="pw-err"></div>
+    <div class="gate-hint">팀원에게 공유된 비밀번호를 입력하세요.<br>브라우저를 닫으면 다시 입력해야 합니다.</div>
+  </div>
+</div>
+
+<div id="app">
+<nav>
+  <span class="nav-title">팀 프로젝트 보드</span>
+  <span class="nav-badge">팀 공유</span>
+  <span class="nav-date">기준일 2026-06-19 (금)</span>
+  <button class="logout-btn" id="logout" type="button">나가기</button>
+</nav>
+
+<main>
+  <div class="head">
+    <h1>🗂️ 팀 진행상황 대시보드</h1>
+    <div class="sub">리콜 · 보험청구 · EMR 제작 — 세 트랙을 한눈에</div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi tone-ink">
+      <div class="kpi-label">진행 중 트랙</div>
+      <div class="kpi-val">2<span class="u">/3</span></div>
+      <div class="kpi-meta">리콜 · 보험청구</div>
+    </div>
+    <div class="kpi tone-amber">
+      <div class="kpi-label">다음 마일스톤</div>
+      <div class="kpi-val">D-3</div>
+      <div class="kpi-meta">6/22 보험 검토 페이지</div>
+    </div>
+    <div class="kpi tone-green">
+      <div class="kpi-label">이번 주 일정</div>
+      <div class="kpi-val">3<span class="u">건</span></div>
+      <div class="kpi-meta">6/22 · 6/24 · 6/26</div>
+    </div>
+  </div>
+
+  <div class="section-label">📅 캘린더</div>
+  <div class="cal">
+    <div class="cal-top">
+      <span class="cal-month">2026년 6월</span>
+      <div class="cal-legend">
+        <span class="lg"><span class="swatch sw-recall"></span>리콜</span>
+        <span class="lg"><span class="swatch sw-ins"></span>보험청구</span>
+      </div>
+    </div>
+    <div class="cal-grid">
+      <div class="dow sun">일</div><div class="dow">월</div><div class="dow">화</div><div class="dow">수</div><div class="dow">목</div><div class="dow">금</div><div class="dow sat">토</div>
+
+      <div class="day out"><span class="num">31</span></div>
+      <div class="day"><span class="num">1</span></div>
+      <div class="day"><span class="num">2</span></div>
+      <div class="day"><span class="num">3</span></div>
+      <div class="day"><span class="num">4</span></div>
+      <div class="day"><span class="num">5</span></div>
+      <div class="day"><span class="num">6</span></div>
+
+      <div class="day"><span class="num">7</span></div>
+      <div class="day"><span class="num">8</span></div>
+      <div class="day"><span class="num">9</span></div>
+      <div class="day"><span class="num">10</span></div>
+      <div class="day"><span class="num">11</span></div>
+      <div class="day"><span class="num">12</span></div>
+      <div class="day"><span class="num">13</span></div>
+
+      <div class="day"><span class="num">14</span></div>
+      <div class="day"><span class="num">15</span><div class="ev ev-recall done">리콜 배포 시도</div></div>
+      <div class="day"><span class="num">16</span><div class="ev ev-recall done">리콜 실제 배포</div></div>
+      <div class="day"><span class="num">17</span><div class="ev ev-recall now">피드백 시작</div></div>
+      <div class="day"><span class="num">18</span><div class="ev ev-recall done">콜카드 구조 업로드</div></div>
+      <div class="day today"><span class="num">19</span><div class="ev ev-recall now">명칭 고민</div></div>
+      <div class="day"><span class="num">20</span></div>
+
+      <div class="day"><span class="num">21</span></div>
+      <div class="day"><span class="num">22</span><div class="ev ev-ins">검토 페이지 생성</div></div>
+      <div class="day"><span class="num">23</span></div>
+      <div class="day"><span class="num">24</span><div class="ev ev-ins">타치과 세팅 준비</div></div>
+      <div class="day"><span class="num">25</span></div>
+      <div class="day"><span class="num">26</span><div class="ev ev-ins">타치과 2곳 추가</div></div>
+      <div class="day"><span class="num">27</span></div>
+
+      <div class="day"><span class="num">28</span></div>
+      <div class="day"><span class="num">29</span><div class="ev ev-ins">타치과 피드백</div></div>
+      <div class="day"><span class="num">30</span></div>
+      <div class="day out"><span class="num">1</span></div>
+      <div class="day out"><span class="num">2</span></div>
+      <div class="day out"><span class="num">3</span></div>
+      <div class="day out"><span class="num">4</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">📊 트랙별 진행</div>
+  <div class="board">
+
+    <div class="col">
+      <div class="col-accent acc-recall"></div>
+      <div class="col-head">
+        <span class="col-icon">📞</span>
+        <span class="col-name">리콜</span>
+        <span class="col-status s-fb">피드백 중</span>
+      </div>
+      <div class="col-body">
+        <div class="card done">
+          <div class="card-top">
+            <div class="card-date"><span class="dot-day"></span>6월 15일 월</div>
+            <span class="dday past">D+4</span>
+          </div>
+          <div class="card-text">배포 시도</div>
+        </div>
+        <div class="card done">
+          <div class="card-top">
+            <div class="card-date"><span class="dot-day"></span>6월 16일 화</div>
+            <span class="dday past">D+3</span>
+          </div>
+          <div class="card-text">실제 배포 완료</div>
+        </div>
+        <div class="card now">
+          <div class="card-top">
+            <div class="card-date"><span class="dot-day"></span>6월 17일 수 ~ 진행 중</div>
+            <span class="dday now">NOW</span>
+          </div>
+          <div class="card-text">피드백 받는 중</div>
+        </div>
+        <div class="card done">
+          <div class="card-top">
+            <div class="card-date"><span class="dot-day"></span>6월 18일 목</div>
+            <span class="dday past">D+1</span>
+          </div>
+          <div class="card-text">콜카드 구조 업로드 완료</div>
+          <div class="card-note">❓ 언제부터 적용해서 써볼 수 있는지 물어보기</div>
+        </div>
+        <div class="card now">
+          <div class="card-top">
+            <div class="card-date"><span class="dot-day"></span>6월 19일 금 ~ 진행 중</div>
+            <span class="dday now">NOW</span>
+          </div>
+          <div class="card-text">명칭 고민</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="col-accent acc-ins"></div>
+      <div class="col-head">
+        <span class="col-icon">📋</span>
+        <span class="col-name">보험청구</span>
+        <span class="col-status s-wip">진행 중</span>
+      </div>
+      <div class="col-body">
+        <div class="card wip">
+          <div class="card-top">
+            <div class="card-date"><span class="dot-day"></span>6월 22일 월</div>
+            <span class="dday soon">D-3</span>
+          </div>
+          <div class="card-text">검토용 페이지 생성 → 본원 2일 검수</div>
+        </div>
+        <div class="card">
+          <div class="card-top">
+            <div class="card-date"><span class="dot-day"></span>6월 24일 수</div>
+            <span class="dday soon">D-5</span>
+          </div>
+          <div class="card-text">타치과 보험기능 세팅 준비</div>
+          <div class="card-note">정교수님 영입 고민 중</div>
+        </div>
+        <div class="card">
+          <div class="card-top">
+            <div class="card-date"><span class="dot-day"></span>6월 26일 금</div>
+            <span class="dday norm">D-7</span>
+          </div>
+          <div class="card-text">타치과 2곳 보험기능 추가</div>
+        </div>
+        <div class="card">
+          <div class="card-top">
+            <div class="card-date"><span class="dot-day"></span>6월 29일 월</div>
+            <span class="dday norm">D-10</span>
+          </div>
+          <div class="card-text">타치과 피드백 수집</div>
+          <div class="card-note">정교수님 영입 여부 결정</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="col-accent acc-emr"></div>
+      <div class="col-head">
+        <span class="col-icon">🖥️</span>
+        <span class="col-name">EMR 제작</span>
+        <span class="col-status s-empty">대기</span>
+      </div>
+      <div class="col-body">
+        <div class="empty-msg">아직 일정 없음<br>(추후 업데이트)</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+</div>
+
+<script>
+(function () {
+  var KEY = 'sasa-team-board-v1';
+  var HASH = '0ffe1ab1a19a44bb4f364be95ffad5bbd751ad8cce29f6f2bb0814da8af2bb4';
+  var gate = document.getElementById('gate');
+  var app = document.getElementById('app');
+  var input = document.getElementById('pw');
+  var err = document.getElementById('pw-err');
+
+  function sha256(text) {
+    var enc = new TextEncoder().encode(text);
+    return crypto.subtle.digest('SHA-256', enc).then(function (buf) {
+      return Array.from(new Uint8Array(buf)).map(function (b) {
+        return b.toString(16).padStart(2, '0');
+      }).join('');
+    });
+  }
+
+  function unlock() {
+    gate.classList.add('hidden');
+    app.classList.add('unlocked');
+    sessionStorage.setItem(KEY, '1');
+  }
+
+  function lock() {
+    gate.classList.remove('hidden');
+    app.classList.remove('unlocked');
+    sessionStorage.removeItem(KEY);
+    input.value = '';
+    err.textContent = '';
+    input.focus();
+  }
+
+  function tryLogin() {
+    var val = input.value.trim();
+    if (!val) {
+      err.textContent = '비밀번호를 입력하세요.';
+      return;
+    }
+    sha256(val).then(function (h) {
+      if (h === HASH) unlock();
+      else {
+        err.textContent = '비밀번호가 맞지 않습니다.';
+        input.select();
+      }
+    });
+  }
+
+  document.getElementById('pw-btn').addEventListener('click', tryLogin);
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') tryLogin();
+  });
+  document.getElementById('logout').addEventListener('click', lock);
+
+  if (sessionStorage.getItem(KEY) === '1') unlock();
+  else input.focus();
+})();
+</script>
+</body>
+</html>
