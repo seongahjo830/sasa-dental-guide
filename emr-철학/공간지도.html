@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>공간지도 — 위치를 글자 아닌 그림으로 — AI 시대 EMR 철학</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,'Apple SD Gothic Neo','Pretendard','Noto Sans KR',sans-serif; background:#FBFAF7; color:#22232a; -webkit-font-smoothing:antialiased; line-height:1.7; }
+  nav { position:sticky; top:0; z-index:50; height:52px; background:rgba(251,250,247,.92); backdrop-filter:blur(8px);
+        border-bottom:1px solid #ece9e2; display:flex; align-items:center; padding:0 16px; gap:10px; }
+  nav a.back { display:flex; align-items:center; gap:6px; color:#6b6b75; text-decoration:none; font-size:13px; padding:5px 10px; border-radius:8px; white-space:nowrap; }
+  nav a.back:hover { background:#f0eee8; }
+  nav .nt { font-size:13.5px; font-weight:600; color:#33343c; letter-spacing:-.3px; }
+  nav .ns { margin-left:auto; font-size:12px; color:#a7a59d; }
+  .wrap { max-width:960px; margin:0 auto; padding:34px 20px 80px; }
+  .eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; letter-spacing:.3px;
+             color:#00897b; background:#e0f2f1; padding:5px 12px; border-radius:30px; margin-bottom:18px; }
+  h1 { font-size:29px; line-height:1.32; letter-spacing:-1px; font-weight:800; color:#1a1a22; margin-bottom:12px; }
+  h1 .x { color:#00897b; }
+  .tagline { font-size:16px; color:#6a6a73; line-height:1.7; margin-bottom:18px; font-weight:500; }
+  p.lead { font-size:18px; line-height:1.75; color:#2a2b33; margin:0 0 22px; letter-spacing:-.2px; }
+  p.lead b { color:#15151c; }
+
+  /* ===== 파노라마 + 핀 ===== */
+  .stage { background:#0f1115; border-radius:18px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.05); margin:8px 0 12px; }
+  .pano { position:relative; width:100%; line-height:0; }
+  .pano img.bg { width:100%; display:block; filter:brightness(.92) contrast(1.02); }
+  .pano .midline { position:absolute; top:6%; bottom:6%; left:50%; width:1px; background:rgba(255,255,255,.14); }
+  .pano .side { position:absolute; top:9px; font-size:10.5px; font-weight:800; letter-spacing:.5px; color:rgba(255,255,255,.55); }
+  .pano .side.r { left:14px; } .pano .side.l { right:14px; }
+  .pin { position:absolute; transform:translate(-50%,-50%); z-index:3; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .pin .dot { width:18px; height:18px; border-radius:50%; border:3px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.5); transition:transform .15s; }
+  .pin .tag { font-size:11px; font-weight:800; color:#fff; background:rgba(15,17,21,.78); border:1px solid rgba(255,255,255,.18); padding:2px 8px; border-radius:20px; white-space:nowrap; backdrop-filter:blur(3px); transition:transform .15s; }
+  .pin:hover .dot, .pin.active .dot { transform:scale(1.25); }
+  .pin.active .tag { transform:scale(1.06); }
+  .pin .halo { position:absolute; top:0; left:50%; transform:translate(-50%,-2px); width:18px; height:18px; border-radius:50%; }
+  .pin.active .halo { animation:pulse 1.4s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,255,255,.5);} 100%{box-shadow:0 0 0 16px rgba(255,255,255,0);} }
+  .stagebar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:11px 15px; background:#15171d; border-top:1px solid rgba(255,255,255,.07); }
+  .stagebar .hint { font-size:12px; color:rgba(255,255,255,.55); }
+  .stagebar .hint b { color:#fff; }
+  .pinbtns { display:flex; gap:7px; flex-wrap:wrap; margin-left:auto; }
+  .pinbtn { font-size:11.5px; font-weight:800; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.06); color:#fff; border-radius:20px; padding:5px 11px; cursor:pointer; display:flex; align-items:center; gap:6px; }
+  .pinbtn .sw { width:9px; height:9px; border-radius:50%; }
+  .pinbtn.active { background:#fff; color:#15171d; }
+  .pinbtn.active .sw { box-shadow:0 0 0 2px rgba(0,0,0,.15); }
+
+  /* 선택 정보 */
+  .selinfo { background:#fff; border:1px solid #ece9e2; border-radius:14px; padding:14px 17px; margin:0 0 14px; display:none; }
+  .selinfo.on { display:block; }
+  .selinfo .st { font-size:15px; font-weight:800; color:#1a1a22; display:flex; align-items:center; gap:8px; }
+  .selinfo .st .chip { font-size:11px; font-weight:800; color:#fff; padding:2px 9px; border-radius:20px; }
+  .selinfo .sd { font-size:13.5px; color:#55545d; margin-top:6px; line-height:1.65; }
+  .selinfo .sd .where { color:#00897b; font-weight:700; }
+
+  /* 사진 갤러리 */
+  h2 { font-size:14px; font-weight:800; letter-spacing:.4px; color:#9a988f; text-transform:uppercase; margin:30px 0 12px; }
+  .gallery { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+  .photo { position:relative; border-radius:12px; overflow:hidden; background:#1a1a2e; cursor:zoom-in; aspect-ratio:4/3; transition:opacity .2s, transform .15s, box-shadow .2s; }
+  .photo img { width:100%; height:100%; object-fit:cover; display:block; }
+  .photo .plab { position:absolute; left:0; right:0; bottom:0; background:linear-gradient(to top,rgba(0,0,0,.82),transparent); color:#fff; font-size:11px; font-weight:700; padding:18px 9px 8px; }
+  .photo.dim { opacity:.28; filter:grayscale(.4); }
+  .photo.match { box-shadow:0 0 0 3px #00897b, 0 8px 22px rgba(0,137,123,.28); transform:translateY(-2px); }
+  .photo.match .plab::after { content:'  ◀ 여기'; color:#7fe3d6; font-weight:800; }
+  .galnote { font-size:11.5px; color:#a7a59d; margin:10px 0 0; line-height:1.6; }
+
+  .callout { border-radius:14px; padding:16px 19px; margin:24px 0; font-size:14.5px; line-height:1.7; }
+  .callout.note { background:#f6fbfa; border:1px solid #d8ece9; border-left:3px solid #00897b; color:#33453f; }
+  .callout .ct { font-size:12px; font-weight:800; margin-bottom:7px; color:#00897b; }
+  p { font-size:16px; margin:0 0 18px; color:#33343c; } p b { color:#15151c; font-weight:700; }
+  .why { display:grid; grid-template-columns:1fr 1fr; gap:13px; margin:8px 0 22px; }
+  .wbox { border-radius:14px; padding:16px 18px; font-size:14.5px; line-height:1.65; }
+  .wbox .lbl { font-size:12px; font-weight:800; margin-bottom:7px; display:flex; align-items:center; gap:6px; }
+  .wbox.bad { background:#fdf3f3; border:1px solid #f6dada; } .wbox.bad .lbl { color:#c0392b; }
+  .wbox.good { background:#f1f8f2; border:1px solid #d4e8d6; } .wbox.good .lbl { color:#2e7d32; }
+  .wbox b { color:#15151c; }
+
+  .pager { display:flex; justify-content:space-between; gap:12px; margin-top:42px; padding-top:22px; border-top:1px solid #ece9e2; }
+  .pager a { flex:1; text-decoration:none; padding:14px 16px; border-radius:12px; border:1px solid #ece9e2; background:#fff; color:#33343c; font-size:13.5px; line-height:1.5; transition:border-color .15s, transform .15s; }
+  .pager a:hover { border-color:#00897b; transform:translateY(-2px); }
+  .pager a.next { text-align:right; } .pager .pd { font-size:11px; color:#a7a59d; font-weight:700; margin-bottom:3px; }
+
+  /* 라이트박스 */
+  .lb { position:fixed; inset:0; background:rgba(10,10,16,.92); z-index:300; display:none; align-items:center; justify-content:center; padding:24px; cursor:zoom-out; }
+  .lb.on { display:flex; } .lb img { max-width:96vw; max-height:92vh; border-radius:10px; }
+
+  @media (max-width:640px){ h1{font-size:24px;} .why{grid-template-columns:1fr;} .gallery{grid-template-columns:repeat(2,1fr);} .pin .tag{font-size:10px;padding:1px 6px;} .wrap{padding:24px 14px 70px;} }
+</style>
+</head>
+<body>
+<nav>
+  <a class="back" href="../emr-가독성가이드.html">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    가독성 가이드로
+  </a>
+  <span style="color:#d8d4cb;">|</span>
+  <span class="nt">공간지도</span>
+  <span class="ns">서울사계절치과</span>
+</nav>
+
+<div class="wrap">
+  <div class="eyebrow"><span>🦷</span> 핵심 2 · 공간지도</div>
+  <h1>위치는 <span class="x">‘#26’</span>이 아니라 <span class="x">입속 그 자리</span>에 표시합니다</h1>
+  <div class="tagline">‘#26’을 ‘왼쪽 위 어금니’로 번역하는 한 박자를 없앤다 — 파노라마 위 그 자리에 바로 찍는다</div>
+
+  <p class="lead">치료를 글자(#26)로 적지 않고, <b>실제 파노라마 사진의 그 위치</b>에 핀을 찍었습니다. 핀을 누르면 같은 부위를 찍은 <b>구내 사진</b>이 환하게 살아납니다 — “어디”를 머리로 번역할 필요가 없습니다.</p>
+
+  <div class="stage">
+    <div class="pano" id="pano">
+      <img class="bg" src="../img/p_panorama.jpg" alt="환자 파노라마 X-ray" />
+      <span class="side r">◀ 환자 오른쪽</span>
+      <span class="side l">환자 왼쪽 ▶</span>
+      <div class="midline"></div>
+      <!-- 핀은 JS로 -->
+    </div>
+    <div class="stagebar">
+      <span class="hint">👆 파노라마 위 <b>색깔 핀</b>을 누르면 — 아래 구내사진 중 그 부위가 <b>환하게</b> 켜집니다.</span>
+      <div class="pinbtns" id="pinbtns"></div>
+    </div>
+  </div>
+
+  <div class="selinfo" id="selinfo"></div>
+
+  <h2>같은 부위 구내 사진</h2>
+  <div class="gallery" id="gallery"></div>
+  <p class="galnote">📌 핀과 사진의 연결은 <b>표준 촬영 구도 기준의 기본 매핑</b>입니다. 실제 촬영본에 맞춰 원장이 손쉽게 바로잡을 수 있도록 데이터로 분리해 두었습니다. 핀 좌표도 표준 치열 모델 기준 근사값이라 실제 파노라마에 맞춰 미세조정 가능합니다.</p>
+
+  <div class="why">
+    <div class="wbox bad"><div class="lbl">❌ 글자로만</div>‘#26 #17 #46 치료함’ — 어느 자리인지 떠올리느라 시선이 멈춘다. 환자에게 설명할 때도 머릿속에서 한 번 더 번역한다.</div>
+    <div class="wbox good"><div class="lbl">✅ 공간지도</div>핀이 입속 그 자리에 있다. 보면 바로 “거기”. 위치를 위치로 보여주면 번역 단계가 사라진다(내부 원칙 INV-7).</div>
+  </div>
+
+  <div class="callout note">
+    <div class="ct">‘어디’는 공간 정보 — 그림이 맞다</div>
+    “어디”는 사람이 즉시 떠올리는 <b>공간 정보</b>입니다. 그걸 번호로 옮기면 해독 단계를 한 번 더 만듭니다 — 사람이 제일 잘 읽는 채널(위치)을 버리는 셈이죠. 위치가 그림으로 보이면, 같은 치아에 모인 사건들(시림→근관→크라운)도 “한 자리에서 벌어진 일”로 묶여 읽힙니다.
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="시간지도.html"><div class="pd">← 이전 핵심</div>시간지도 — 시간을 길이로</a>
+    <a class="next" href="감정과스토리.html"><div class="pd">다음 핵심 →</div>감정과 스토리 — 환자를 사람으로</a>
+  </div>
+</div>
+
+<div class="lb" id="lb" onclick="this.classList.remove('on')"><img id="lbimg" src="" alt=""/></div>
+
+<script>
+/* ===== 사진 (../img). 구도 태그는 기본값 — 실제 촬영본에 맞춰 조정 ===== */
+const PHOTOS = [
+  {f:'p_occlusal_1.jpg', label:'상악 교합면', region:'upper'},
+  {f:'p_occlusal_2.jpg', label:'하악 교합면', region:'lower'},
+  {f:'p_occlusal_3.jpg', label:'교합면(정면)', region:'front'},
+  {f:'p_buccal_1.jpg',   label:'우측 협면',   region:'right'},
+  {f:'p_buccal_2.jpg',   label:'정면 협면',   region:'front'},
+  {f:'p_buccal_3.jpg',   label:'좌측 협면',   region:'left'},
+  {f:'p_lingual_1.jpg',  label:'우측 설면',   region:'right'},
+  {f:'p_lingual_2.jpg',  label:'정면 설면',   region:'front'},
+  {f:'p_lingual_3.jpg',  label:'좌측 설면',   region:'left'}
+];
+/* ===== 핀(치료) — 좌표 %는 표준 치열 모델 근사. matchRegions=환하게 켤 사진 부위 ===== */
+const PINS = [
+  { id:'t17', tooth:'오른쪽 위 맨 끝 어금니(#17)', x:16, y:33, color:'#ea580c',
+    txLabel:'근관치료', detail:'시림 검사에서 비가역적 치수염 확인 → 발수·근관확대 진행',
+    matchPhotos:['p_occlusal_1.jpg','p_buccal_1.jpg'] },
+  { id:'t15', tooth:'오른쪽 위 작은어금니(#15)', x:30, y:30, color:'#b45309',
+    txLabel:'검사', detail:'우측 시림 호소로 검사 대상에 포함(Air/Bite 검사)',
+    matchPhotos:['p_occlusal_1.jpg','p_buccal_1.jpg'] },
+  { id:'t26', tooth:'왼쪽 위 큰어금니(#26)', x:80, y:33, color:'#2563eb',
+    txLabel:'근관치료 → 크라운', detail:'“우측이 시려요” 호소 → Caviton 봉함, 크라운 1주 후 예정',
+    matchPhotos:['p_occlusal_1.jpg','p_buccal_3.jpg'] },
+  { id:'t46', tooth:'오른쪽 아래 큰어금니(#46)', x:20, y:67, color:'#16a34a',
+    txLabel:'마모 수복', detail:'치아 마모 — 충전물 연마',
+    matchPhotos:['p_occlusal_2.jpg','p_buccal_1.jpg'] }
+];
+
+const pano = document.getElementById('pano');
+PINS.forEach(p=>{
+  const el = document.createElement('div'); el.className='pin'; el.dataset.id=p.id;
+  el.style.left=p.x+'%'; el.style.top=p.y+'%';
+  el.innerHTML = `<span class="halo"></span><span class="dot" style="background:${p.color}"></span><span class="tag">${p.txLabel}</span>`;
+  el.onclick = ()=>select(p.id);
+  pano.appendChild(el);
+});
+document.getElementById('pinbtns').innerHTML = PINS.map(p=>
+  `<button class="pinbtn" data-id="${p.id}" onclick="select('${p.id}')"><span class="sw" style="background:${p.color}"></span>${p.txLabel}</button>`).join('');
+
+const gallery = document.getElementById('gallery');
+gallery.innerHTML = PHOTOS.map(ph=>
+  `<div class="photo" data-f="${ph.f}" onclick="zoom('${ph.f}')"><img src="../img/${ph.f}" alt="${ph.label}" loading="lazy"/><span class="plab">${ph.label}</span></div>`).join('');
+
+let cur=null;
+function select(id){
+  const p = PINS.find(x=>x.id===id);
+  if(cur===id){ clearSel(); return; }
+  cur=id;
+  document.querySelectorAll('.pin').forEach(e=>e.classList.toggle('active', e.dataset.id===id));
+  document.querySelectorAll('.pinbtn').forEach(e=>e.classList.toggle('active', e.dataset.id===id));
+  document.querySelectorAll('.photo').forEach(e=>{
+    const m = p.matchPhotos.includes(e.dataset.f);
+    e.classList.toggle('match', m); e.classList.toggle('dim', !m);
+  });
+  const si=document.getElementById('selinfo'); si.classList.add('on');
+  si.innerHTML = `<div class="st"><span class="chip" style="background:${p.color}">${p.txLabel}</span> ${p.tooth}</div>
+    <div class="sd">${p.detail}<br><span class="where">📷 아래에서 ‘${p.matchPhotos.map(f=>PHOTOS.find(x=>x.f===f).label).join(' · ')}’ 사진이 켜졌습니다.</span></div>`;
+  document.querySelector('.match')?.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function clearSel(){
+  cur=null;
+  document.querySelectorAll('.pin,.pinbtn').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.photo').forEach(e=>e.classList.remove('match','dim'));
+  document.getElementById('selinfo').classList.remove('on');
+}
+function zoom(f){ const lb=document.getElementById('lb'); document.getElementById('lbimg').src='../img/'+f; lb.classList.add('on'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ document.getElementById('lb').classList.remove('on'); clearSel(); } });
+</script>
+</body>
+</html>

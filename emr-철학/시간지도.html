@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>시간지도 — 시간을 글자가 아니라 길이로 — AI 시대 EMR 철학</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,'Apple SD Gothic Neo','Pretendard','Noto Sans KR',sans-serif; background:#FBFAF7; color:#22232a; -webkit-font-smoothing:antialiased; line-height:1.7; }
+  nav { position:sticky; top:0; z-index:50; height:52px; background:rgba(251,250,247,.92); backdrop-filter:blur(8px);
+        border-bottom:1px solid #ece9e2; display:flex; align-items:center; padding:0 16px; gap:10px; }
+  nav a.back { display:flex; align-items:center; gap:6px; color:#6b6b75; text-decoration:none; font-size:13px; padding:5px 10px; border-radius:8px; white-space:nowrap; }
+  nav a.back:hover { background:#f0eee8; }
+  nav .nt { font-size:13.5px; font-weight:600; color:#33343c; letter-spacing:-.3px; }
+  nav .ns { margin-left:auto; font-size:12px; color:#a7a59d; }
+  .refbtn { margin-left:auto; display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700;
+            color:#fff; background:#4f46e5; border:none; border-radius:9px; padding:8px 13px; cursor:pointer; }
+  .refbtn:hover { filter:brightness(.93); }
+  .wrap { max-width:920px; margin:0 auto; padding:34px 20px 80px; }
+  .eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; letter-spacing:.3px;
+             color:#4f46e5; background:#eef0fe; padding:5px 12px; border-radius:30px; margin-bottom:18px; }
+  h1 { font-size:29px; line-height:1.32; letter-spacing:-1px; font-weight:800; color:#1a1a22; margin-bottom:12px; }
+  h1 .x { color:#4f46e5; }
+  .tagline { font-size:16px; color:#6a6a73; line-height:1.7; margin-bottom:18px; font-weight:500; }
+  p.lead { font-size:18px; line-height:1.75; color:#2a2b33; margin:0 0 24px; letter-spacing:-.2px; }
+  p.lead b { color:#15151c; }
+
+  /* ===== 타임맵 ===== */
+  .mapcard { background:#fff; border:1px solid #ece9e2; border-radius:18px; box-shadow:0 1px 4px rgba(0,0,0,.03); padding:18px 18px 10px; margin:10px 0 14px; overflow:hidden; }
+  .maphead { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:4px; }
+  .maphead .who { font-size:15px; font-weight:800; color:#1a1a22; }
+  .maphead .meta { font-size:12.5px; color:#9a988f; }
+  .axisnote { font-size:11.5px; color:#a7a59d; margin:2px 0 10px; }
+  .timemap { position:relative; overflow-x:auto; overflow-y:hidden; padding-bottom:6px; }
+  .tm-inner { position:relative; }
+  .tm-axis { position:relative; height:30px; border-bottom:1.5px solid #e6e3da; margin-left:118px; }
+  .tm-tick { position:absolute; top:0; transform:translateX(-50%); text-align:center; }
+  .tm-tick .lbl { font-size:10.5px; color:#9a988f; font-weight:700; font-variant-numeric:tabular-nums; }
+  .tm-tick .stem { position:absolute; left:50%; bottom:-1px; width:1px; height:6px; background:#d8d4cb; }
+  .tm-break { position:absolute; top:2px; transform:translateX(-50%); color:#c9c4b8; font-size:13px; }
+  .tm-break .cap { display:block; font-size:9.5px; color:#b7b2a6; white-space:nowrap; margin-top:1px; font-weight:700; }
+  .tm-now { position:absolute; top:-4px; bottom:0; width:0; border-left:2px dashed #ef4444; z-index:3; }
+  .tm-now .tag { position:absolute; top:-18px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:800; color:#ef4444; background:#fff; padding:0 4px; white-space:nowrap; }
+  .tm-future { position:absolute; top:30px; bottom:0; background:repeating-linear-gradient(135deg,#faf7ff,#faf7ff 6px,#f3effe 6px,#f3effe 12px); z-index:0; }
+
+  .tm-row { position:relative; display:flex; align-items:center; min-height:44px; }
+  .tm-row + .tm-row { border-top:1px dashed #f0ede5; }
+  .tm-rlabel { width:118px; flex:none; padding-right:10px; }
+  .tm-rlabel .pos { display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:800; }
+  .tm-rlabel .posdot { width:9px; height:9px; border-radius:50%; flex:none; }
+  .tm-rlabel .rname { font-size:11px; color:#8b897f; line-height:1.35; margin-top:1px; }
+  .tm-track { position:relative; flex:1; height:44px; }
+
+  .tm-bar { position:absolute; top:50%; transform:translateY(-50%); height:18px; border-radius:9px; opacity:.9;
+            display:flex; align-items:center; min-width:18px; z-index:1; }
+  .tm-bar.dashed { background:transparent !important; border:1.5px dashed; opacity:.85; }
+  .tm-bar .blab { font-size:10.5px; font-weight:800; color:#fff; padding:0 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tm-bar.dashed .blab { color:#5b21b6; }
+  .tm-dot { position:absolute; top:50%; transform:translate(-50%,-50%); width:15px; height:15px; border-radius:50%;
+            border:3px solid #fff; box-shadow:0 0 0 1.5px rgba(0,0,0,.08); z-index:2; cursor:pointer; }
+  .tm-dot.flag::after { content:''; position:absolute; inset:-6px; border-radius:50%; border:1.5px solid #ef4444; opacity:.5; }
+  .tm-evlab { position:absolute; top:50%; transform:translateY(-50%); font-size:10px; color:#7b7970; white-space:nowrap; pointer-events:none; }
+
+  .legend { display:flex; flex-wrap:wrap; gap:10px 16px; margin:14px 0 4px 118px; padding-top:10px; border-top:1px solid #f0ede5; }
+  .legend .li { display:flex; align-items:center; gap:6px; font-size:11.5px; color:#6a6a73; }
+  .legend .sw { width:16px; height:10px; border-radius:5px; }
+  .legend .sw.dot { width:11px; height:11px; border-radius:50%; }
+  .legend .sw.dash { background:transparent; border:1.5px dashed #7c3aed; }
+
+  .readhint { font-size:13px; color:#6a6a73; background:#f7f6f2; border:1px solid #ece9e0; border-radius:12px; padding:12px 15px; margin:6px 0 26px; line-height:1.65; }
+  .readhint b { color:#3a3640; }
+
+  h2 { font-size:14px; font-weight:800; letter-spacing:.4px; color:#9a988f; text-transform:uppercase; margin:34px 0 12px; }
+  .why { display:grid; grid-template-columns:1fr 1fr; gap:13px; margin-bottom:8px; }
+  .wbox { border-radius:14px; padding:16px 18px; font-size:14.5px; line-height:1.65; }
+  .wbox .lbl { font-size:12px; font-weight:800; margin-bottom:7px; display:flex; align-items:center; gap:6px; }
+  .wbox.bad { background:#fdf3f3; border:1px solid #f6dada; } .wbox.bad .lbl { color:#c0392b; }
+  .wbox.good { background:#eef0fe; border:1px solid #dcdcfb; } .wbox.good .lbl { color:#4f46e5; }
+  .wbox b { color:#15151c; }
+  p { font-size:16px; margin:0 0 18px; color:#33343c; }
+  p b { color:#15151c; font-weight:700; }
+  .callout { border-radius:14px; padding:16px 19px; margin:8px 0 26px; font-size:14.5px; line-height:1.7; }
+  .callout.note { background:#f6f4fb; border:1px solid #e6e1f3; border-left:3px solid #4f46e5; color:#3a3640; }
+  .callout .ct { font-size:12px; font-weight:800; margin-bottom:7px; color:#4f46e5; }
+
+  .pager { display:flex; justify-content:space-between; gap:12px; margin-top:46px; padding-top:22px; border-top:1px solid #ece9e2; }
+  .pager a { flex:1; text-decoration:none; padding:14px 16px; border-radius:12px; border:1px solid #ece9e2; background:#fff; color:#33343c; font-size:13.5px; line-height:1.5; transition:border-color .15s, transform .15s; }
+  .pager a:hover { border-color:#4f46e5; transform:translateY(-2px); }
+  .pager a.next { text-align:right; } .pager .pd { font-size:11px; color:#a7a59d; font-weight:700; margin-bottom:3px; }
+
+  /* ===== 관련자료 패널 ===== */
+  .ovl { position:fixed; inset:0; background:rgba(20,18,30,.42); z-index:200; opacity:0; pointer-events:none; transition:opacity .22s; }
+  .ovl.on { opacity:1; pointer-events:auto; }
+  .panel { position:fixed; top:0; right:0; bottom:0; width:min(520px,94vw); background:#FBFAF7; z-index:201;
+           transform:translateX(102%); transition:transform .26s cubic-bezier(.22,.61,.36,1); box-shadow:-12px 0 40px rgba(0,0,0,.18);
+           display:flex; flex-direction:column; }
+  .panel.on { transform:translateX(0); }
+  .panel header { display:flex; align-items:center; gap:10px; padding:16px 18px; border-bottom:1px solid #ece9e2; background:#fff; }
+  .panel header h3 { font-size:15.5px; font-weight:800; color:#1a1a22; }
+  .panel header .sub { font-size:11.5px; color:#9a988f; }
+  .panel header .close { margin-left:auto; border:none; background:#f0eee8; width:30px; height:30px; border-radius:8px; cursor:pointer; font-size:15px; color:#6b6b75; }
+  .panel .body { overflow-y:auto; padding:14px 16px 40px; }
+  .filterbar { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .fbtn { font-size:11.5px; font-weight:700; border:1px solid #e2dfd6; background:#fff; color:#6a6a73; border-radius:20px; padding:5px 11px; cursor:pointer; }
+  .fbtn.on { background:#4f46e5; color:#fff; border-color:#4f46e5; }
+  .cat { margin-bottom:20px; }
+  .cat h4 { font-size:12.5px; font-weight:800; color:#4f46e5; margin-bottom:9px; display:flex; align-items:center; gap:7px; }
+  .cat h4 .cnt { font-size:10.5px; color:#a7a59d; font-weight:700; }
+  .ref { display:block; text-decoration:none; background:#fff; border:1px solid #ece9e2; border-radius:12px; padding:12px 14px; margin-bottom:9px; transition:border-color .15s, transform .12s; }
+  .ref:hover { border-color:#4f46e5; transform:translateY(-2px); }
+  .ref .rt { font-size:14px; font-weight:800; color:#1a1a22; line-height:1.4; }
+  .ref .rs { font-size:11px; color:#9a988f; font-weight:700; margin:2px 0 5px; }
+  .ref .rd { font-size:12.5px; color:#55545d; line-height:1.6; }
+  .ref .rlink { font-size:11px; color:#4f46e5; font-weight:700; margin-top:6px; display:inline-flex; align-items:center; gap:4px; word-break:break-all; }
+  .ref .lowc { display:inline-block; font-size:9.5px; font-weight:800; color:#b45309; background:#fdf3e3; border-radius:5px; padding:1px 5px; margin-left:6px; }
+  .panelnote { font-size:11.5px; color:#a7a59d; line-height:1.6; border-top:1px solid #ece9e2; padding-top:12px; }
+
+  @media (max-width:640px){ h1{font-size:24px;} .why{grid-template-columns:1fr;} .wrap{padding:24px 14px 70px;} }
+</style>
+</head>
+<body>
+<nav>
+  <a class="back" href="../emr-가독성가이드.html">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    가독성 가이드로
+  </a>
+  <span style="color:#d8d4cb;">|</span>
+  <span class="nt">시간지도</span>
+  <button class="refbtn" onclick="openPanel()">📚 관련자료 살펴보기</button>
+</nav>
+
+<div class="wrap">
+  <div class="eyebrow"><span>⏳</span> 핵심 1 · 시간지도</div>
+  <h1>시간은 <span class="x">날짜</span>가 아니라 <span class="x">길이</span>로 보여야 합니다</h1>
+  <div class="tagline">“3개월 후 크라운”이라고 적으면 안 읽힌다 — 얼마나 오래됐고, 얼마나 오래 걸렸는지가 길이와 위치로 한눈에 느껴져야 한다</div>
+
+  <p class="lead">아래는 한 환자의 실제 차트 흐름입니다. 날짜를 외워서 머릿속으로 계산하지 마세요. <b>막대가 길면 오래 걸린 것, 왼쪽에 있으면 오래된 것</b> — 그냥 보입니다.</p>
+
+  <div class="mapcard">
+    <div class="maphead">
+      <span class="who">🦷 환자 차트 — 시간축</span>
+      <span class="meta">초진 2024.01 · 최근 집중치료 2026.04 · 오늘 2026.06.19</span>
+    </div>
+    <div class="axisnote">↔ 가로축은 시간. 내원이 없던 긴 공백은 <b style="color:#b7b2a6">⟿ 표시로 접어</b> 최근 일이 잘 보이게 했습니다(먼 과거는 압축해 지각하는 시간 인지 특성 반영).</div>
+    <div class="timemap" id="timemap"><div class="tm-inner" id="tmInner"></div></div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="readhint">
+    👁️ <b>읽는 법</b> — 맨 위 가느다란 막대(<b>치료 관계</b>)가 화면 끝까지 길게 뻗어 있죠. “이 환자와의 관계가 2년 넘게 이어졌다”가 길이로 보입니다.
+    그 위의 점 하나(초진)는 저 멀리 왼쪽 — “2년도 더 전”. 그러다 오른쪽 끝에 점들이 빽빽이 몰려 있습니다 — “요즘 갑자기 집중 치료 중”.
+    날짜를 한 글자도 안 읽고 환자의 시간 리듬이 잡힙니다.
+  </div>
+
+  <h2>이렇게 하면 안 됩니다</h2>
+  <div class="why">
+    <div class="wbox bad"><div class="lbl">❌ 흔한 차트</div>“#26 2026-04-30 근관, 크라운 1주 후 예정 / 초진 2024-01-24” — 날짜를 <b>읽고·빼서</b> ‘2년 전이네, 최근에 몰렸네’를 머리로 계산. 매번.</div>
+    <div class="wbox good"><div class="lbl">✅ 시간지도</div>막대 <b>길이</b>로 기간을, <b>위치</b>로 시점을 본다. 계산이 필요 없다 — 길면 오래, 왼쪽이면 옛날. 한눈에 ‘리듬’이 잡힌다.</div>
+  </div>
+
+  <h2>왜 길이·위치인가 (근거)</h2>
+  <p>사람이 시각 정보를 <b>가장 정확하게</b> 읽는 채널은 ‘위치’와 ‘길이’입니다(Cleveland &amp; McGill, 1984 — 위치 &gt; 길이 &gt; 각도 &gt; 면적 &gt; 색 순). 날짜라는 <b>숫자(=색·글자급)</b>로 적으면, 인간이 제일 잘 읽는 채널을 일부러 버리는 셈입니다.</p>
+  <p>게다가 길이·위치 같은 속성은 <b>0.2초 안에 ‘읽기 전에’ 느껴집니다</b>(전주의적 처리, Healey). “읽어서 아는” 게 아니라 “보면 느끼는” 차트가 가능한 이유입니다.</p>
+
+  <div class="callout note">
+    <div class="ct">왜 공백을 접었나 — 시간 인지 특성</div>
+    사람은 먼 과거일수록 시간을 <b>압축해서</b> 지각하고(Weber–Fechner), 언제였는지도 잘 틀립니다(텔레스코핑 효과 — 오래된 일을 더 최근처럼, 최근 일을 더 옛날처럼). 그래서 빈 2년을 그대로 길게 늘이기보다 <b>⟿로 접고</b> 최근을 키웠습니다. 자세한 근거는 우상단 <b>📚 관련자료 살펴보기</b>에 정리해 두었습니다.
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="../emr-가독성가이드.html"><div class="pd">← 돌아가기</div>AI 시대 EMR 철학 — 가독성 가이드</a>
+    <a class="next" href="공간지도.html"><div class="pd">다음 핵심 →</div>공간지도 — 위치를 글자 아닌 그림으로</a>
+  </div>
+</div>
+
+<!-- 관련자료 패널 -->
+<div class="ovl" id="ovl" onclick="closePanel()"></div>
+<aside class="panel" id="panel" aria-hidden="true">
+  <header>
+    <div>
+      <h3>📚 시간을 잘 보여준 자료들</h3>
+      <div class="sub">시각적 시간 표현 — 사례·기업·이론·논문</div>
+    </div>
+    <button class="close" onclick="closePanel()">✕</button>
+  </header>
+  <div class="body">
+    <div class="filterbar" id="filterbar"></div>
+    <div id="refList"></div>
+    <div class="panelnote">출처는 클릭하면 원문으로 이동합니다. <b style="color:#b45309">확인요</b> 표시는 링크가 바뀌었을 수 있어 클릭 시 확인이 필요한 항목입니다. 이 목록은 시간지도 설계의 근거로 모은 것이며, 계속 보완됩니다.</div>
+  </div>
+</aside>
+
+<script>
+/* ===== 시간지도 데이터 (출처: 사용자 제공 덴트웹 히스토리, 시연용) ===== */
+const PAL = {
+  plan:{c:'#94a3b8',label:'치료 관계'}, cc:{c:'#db2777',label:'환자 호소(증상)'},
+  pi:{c:'#ea580c',label:'검사·진단'}, tx:{c:'#2563eb',label:'처치'},
+  plandot:{c:'#64748b',label:'계획·메모'}, future:{c:'#7c3aed',label:'예정'}
+};
+const TODAY = '2026-06-19';
+// 행(thread): 위치 + 막대(기간) + 점(내원 사건)
+const ROWS = [
+  { pos:'관계', name:'초진~현재 전체', color:'#94a3b8',
+    bar:{from:'2024-01-24', to:TODAY, type:'plan', label:'치료 관계 2년 5개월째'},
+    dots:[ {date:'2024-01-24', type:'plandot', label:'초진'} ] },
+  { pos:'계획', name:'치료계획 수립', color:'#64748b',
+    dots:[ {date:'2026-03-06', type:'plandot', label:'계획 수립'},
+           {date:'2026-03-10', type:'plandot', label:'발치는 4월 이후로'} ] },
+  { pos:'#26', name:'우측 시림 → 근관 → 크라운', color:'#2563eb',
+    bar:{from:'2026-04-30', to:'2026-05-07', type:'tx', label:'근관치료 진행'},
+    bar2:{from:'2026-05-07', to:'2026-05-14', type:'future', label:'크라운 예정', dashed:true},
+    dots:[ {date:'2026-04-30', type:'cc', label:'“우측이 시려요”'},
+           {date:'2026-04-30', type:'tx', label:'Caviton 봉함'} ] },
+  { pos:'#17', name:'시림 검사 → 비가역 치수염', color:'#ea580c',
+    bar:{from:'2026-04-30', to:'2026-05-07', type:'tx', label:'발수·근관확대'},
+    dots:[ {date:'2026-04-30', type:'pi', label:'검사 — “맨 뒤가 시려요”', flag:true} ] },
+  { pos:'#46', name:'치아 마모', color:'#16a34a',
+    dots:[ {date:'2026-04-30', type:'tx', label:'충전물 연마'} ] }
+];
+
+/* ===== 압축(적응형) 시간축 ===== */
+const D = s => new Date(s+'T00:00:00');
+const days = (a,b) => Math.round((D(b)-D(a))/86400000);
+function buildScale(){
+  const set = new Set([TODAY]);
+  ROWS.forEach(r=>{ if(r.bar){set.add(r.bar.from);set.add(r.bar.to);} if(r.bar2){set.add(r.bar2.from);set.add(r.bar2.to);} (r.dots||[]).forEach(d=>set.add(d.date)); });
+  const stops = [...set].sort((a,b)=>D(a)-D(b));
+  let x = 10; const X = {}; const breaks = [];
+  X[stops[0]] = x;
+  for(let i=1;i<stops.length;i++){
+    const d = days(stops[i-1], stops[i]);
+    let w;
+    if(d<=0) w = 0;
+    else if(d<=14) w = 16 + d*4;             // 가까운 간격: 선형
+    else w = Math.min(150, 36 + 30*Math.log2(d)); // 먼 간격: 로그 압축
+    if(d>60) breaks.push({ x:x + w/2, d });
+    x += w; X[stops[i]] = x;
+  }
+  return { X, totalW:x+40, breaks, nowX:X[TODAY] };
+}
+const SC = buildScale();
+const px = s => SC.X[s];
+
+function render(){
+  const inner = document.getElementById('tmInner');
+  const W = Math.max(SC.totalW+118, 740);
+  inner.style.width = W+'px';
+  const trackW = W - 118;
+  let html = '';
+  // axis
+  let axis = '<div class="tm-axis">';
+  const ticks = [['2024-01-24','2024'],['2026-03-06','2026.3'],['2026-04-30','4.30'],[TODAY,'오늘']];
+  ticks.forEach(([d,l])=>{ if(px(d)!=null) axis += `<div class="tm-tick" style="left:${px(d)}px;"><span class="lbl">${l}</span><span class="stem"></span></div>`; });
+  SC.breaks.forEach(b=>{ const yrs=(b.d/365); axis += `<div class="tm-break" style="left:${b.x}px;">⟿<span class="cap">${yrs>=1?yrs.toFixed(1)+'년':b.d+'일'} 공백</span></div>`; });
+  axis += `<div class="tm-now" style="left:${SC.nowX}px;"><span class="tag">오늘</span></div>`;
+  axis += '</div>';
+  html += axis;
+  // rows
+  ROWS.forEach(r=>{
+    let track = '';
+    [r.bar, r.bar2].forEach(b=>{ if(!b) return;
+      const x1=px(b.from), x2=px(b.to); const v=PAL[b.type];
+      track += `<div class="tm-bar${b.dashed?' dashed':''}" style="left:${x1}px; width:${Math.max(x2-x1,20)}px; background:${v.c}; ${b.dashed?'border-color:'+v.c:''}" title="${b.label}"><span class="blab">${b.label}</span></div>`;
+    });
+    (r.dots||[]).forEach(d=>{ const v=PAL[d.type]; const x=px(d.date);
+      track += `<div class="tm-dot${d.flag?' flag':''}" style="left:${x}px; background:${v.c}" title="${d.date} · ${d.label}"></div>`;
+      track += `<div class="tm-evlab" style="left:${x+12}px;">${d.label}</div>`;
+    });
+    html += `<div class="tm-row">
+      <div class="tm-rlabel"><span class="pos" style="color:${r.color}"><span class="posdot" style="background:${r.color}"></span>${r.pos}</span><div class="rname">${r.name}</div></div>
+      <div class="tm-track">${track}</div></div>`;
+  });
+  inner.innerHTML = html;
+  // legend
+  const seen=['plan','cc','pi','tx','plandot','future'];
+  document.getElementById('legend').innerHTML = seen.map(k=>{const v=PAL[k];
+    const sw = k==='future' ? `<span class="sw dash"></span>` : (k==='cc'||k==='pi'||k==='plandot'||(k==='tx')) ? `<span class="sw dot" style="background:${v.c}"></span>` : `<span class="sw" style="background:${v.c}"></span>`;
+    return `<span class="li">${sw}${v.label}</span>`;}).join('')
+    + `<span class="li"><span class="sw" style="background:#cbd5e1;height:6px"></span>막대 길이 = 치료 기간</span>`;
+  // scroll to recent
+  const tm = document.getElementById('timemap'); tm.scrollLeft = Math.max(0, SC.nowX-360);
+}
+render();
+
+/* ===== 관련자료 ===== */
+const REF = {"categories":[
+ {"key":"cases","title_ko":"사례·제품","icon":"🧪","items":[
+  {"title_ko":"LifeLines — 환자 기록 타임라인의 원조","source":"University of Maryland HCIL","desc_ko":"환자 기록을 한 화면 타임라인으로 펼쳐 진단·약물·검사를 가로 막대/점으로 보여준 시초 — 우리 시간지도가 계승하는 ‘한눈에 환자 병력’ 원형.","url":"http://www.cs.umd.edu/projects/hcil/lifelines/","confidence":"high"},
+  {"title_ko":"LifeLines2 — 다중 환자 시간패턴 정렬","source":"University of Maryland HCIL","desc_ko":"여러 환자의 사건 시퀀스를 시간 정렬해 패턴을 찾는 후속작 — ‘리콜 주기/치료 간격’ 같은 반복 시간패턴 비교에 참고.","url":"http://www.cs.umd.edu/hcil/lifelines2/","confidence":"high"},
+  {"title_ko":"EventFlow — 점·구간 이벤트 동시 시각화","source":"University of Maryland HCIL","desc_ko":"순간 이벤트(점)와 기간 이벤트(구간 막대)를 한 타임라인에서 같이 다룸 — ‘발치=점, 골유착=긴 막대’처럼 길이가 곧 기간인 우리 설계와 일치.","url":"https://hcil.umd.edu/eventflow/","confidence":"high"},
+  {"title_ko":"Your Life in Weeks — 인생을 주 단위 격자로","source":"Wait But Why (Tim Urban)","desc_ko":"인생 전체를 작은 칸(=1주)으로 깔아 ‘얼마나 지났는지’를 위치만으로 직감하게 한 사례 — 시간을 공간으로 느끼게 하는 발상의 대표작.","url":"https://waitbutwhy.com/2014/05/life-weeks.html","confidence":"high"},
+  {"title_ko":"GitHub 잔디(컨트리뷰션 그래프)","source":"GitHub","desc_ko":"365일을 요일×주 히트맵으로 깔아 ‘언제 얼마나’를 색 진하기+위치로 즉시 읽게 함 — 환자별 ‘내원 밀도/공백’ 잔디에 직접 응용 가능.","url":"https://github.com/topics/contribution-graph","confidence":"high"}
+ ]},
+ {"key":"companies","title_ko":"기업·디자인시스템","icon":"🏢","items":[
+  {"title_ko":"Grafana 시계열 패널","source":"Grafana Labs","desc_ko":"x축=시간, y축=값으로 대량 시점 데이터를 그리는 업계 표준 — 눈금/툴팁/주석 처리의 모범.","url":"https://grafana.com/docs/grafana/latest/panels-visualizations/visualizations/time-series/","confidence":"high"},
+  {"title_ko":"Linear 로드맵 타임라인","source":"Linear","desc_ko":"막대 길이로 기간, 위치로 시점을 표현·조정(끌어서 늘리기) — ‘치료 기간=막대 길이’ 인터랙션의 깔끔한 사례.","url":"https://linear.app/docs/timeline","confidence":"med"},
+  {"title_ko":"Apple Health 차트 설계 (WWDC22)","source":"Apple Developer","desc_ko":"건강 데이터 차트의 ‘한눈 요약 vs 탭 시 정밀’ 2단계 설계 원칙 강연 — 환자가 볼 시간지도에 그대로 적용.","url":"https://developer.apple.com/videos/play/wwdc2022/110342/","confidence":"high"},
+  {"title_ko":"Material Design 모션 — 지속시간·이징","source":"Google Material Design 3","desc_ko":"이동 거리에 맞춘 지속시간/이징 규칙 — 막대 등장·시간축 스크롤에 ‘시간 흐름감’을 더하는 가이드.","url":"https://m3.material.io/styles/motion/easing-and-duration","confidence":"high"},
+  {"title_ko":"Observable — 직접 만드는 Gantt","source":"Observable / D3·Plot","desc_ko":"길이가 다른 막대로 시간 구간을 그리는 실행 가능한 Gantt 템플릿 — 막대 레이아웃의 바로 쓰는 코드.","url":"https://observablehq.com/@observablehq/build-your-own-gantt-chart","confidence":"med"},
+  {"title_ko":"Edward Tufte — 스파크라인","source":"Edward Tufte","desc_ko":"단어 크기의 초고밀도 미니 그래픽 개념 — 환자 카드 한 줄에 ‘치료 이력 미니 시간선’을 끼워넣는 근거.","url":"https://www.edwardtufte.com/notebook/sparkline-theory-and-practice-edward-tufte/","confidence":"med"}
+ ]},
+ {"key":"psy","title_ko":"심리·지각 이론","icon":"🧠","items":[
+  {"title_ko":"Cleveland & McGill — 시각 부호화 정확도 순위","source":"JASA 1984 / UW CSE412 강의","desc_ko":"위치 > 길이 > 각도 > 면적 > 색 순으로 정확히 읽힌다는 실험 — ‘날짜(글자)가 아니라 위치·길이로 부호화하라’의 1순위 근거.","url":"https://courses.cs.washington.edu/courses/cse412/21sp/lectures/CSE412-Perception1.pdf","confidence":"high"},
+  {"title_ko":"전주의적(preattentive) 처리와 길이 채널","source":"NC State Univ. (Christopher Healey)","desc_ko":"선 길이·크기 등은 200~250ms 내 무의식적으로 읽힌다 — ‘읽지 않고 한눈에 느낀다’가 인지적으로 가능한 이유.","url":"https://www.csc2.ncsu.edu/faculty/healey/PP/","confidence":"high"},
+  {"title_ko":"텔레스코핑 효과 — 날짜 기억 편향","source":"Wikipedia (학술 종합)","desc_ko":"오래된 일은 더 최근처럼, 최근 일은 더 옛날처럼 착각(약 3년이 전환점) — ‘언제였더라’를 못 믿기에 시각 시간축이 필요한 근거.","url":"https://en.wikipedia.org/wiki/Telescoping_effect","confidence":"high"},
+  {"title_ko":"Weber–Fechner — 로그형 시간 지각","source":"Attention, Perception, & Psychophysics","desc_ko":"주관적 시간은 물리량의 로그에 비례 — 먼 과거를 압축해 느끼므로 시간축을 로그/적응형으로 둘 근거(공백 접기).","url":"https://link.springer.com/article/10.3758/s13414-020-02128-6","confidence":"med"},
+  {"title_ko":"게슈탈트 — 근접·유사성 그룹화","source":"Elijah Meeks, Gestalt for Data Viz","desc_ko":"가까이·비슷하게 둔 요소는 한 묶음으로 지각 — ‘같은 치아의 치료들’을 한 행/색으로 묶는 레이아웃 규칙.","url":"https://emeeks.github.io/gestaltdataviz/section1.html","confidence":"med"}
+ ]},
+ {"key":"papers","title_ko":"논문·연구","icon":"📄","items":[
+  {"title_ko":"Visualization of Time-Oriented Data (2판)","source":"Aigner, Miksch, Schumann, Tominski","desc_ko":"시간 데이터 시각화 150+ 기법을 망라한 표준 교과서 — 선형/주기/구간 등 시간 성질별 기법 선택의 종합 레퍼런스.","url":"https://link.springer.com/book/10.1007/978-1-4471-7527-8","confidence":"high"},
+  {"title_ko":"timeviz.net — 시간 시각화 기법 카탈로그","source":"Aigner et al.","desc_ko":"위 책의 기법을 검색·필터로 고르는 온라인 카탈로그 — ‘우리 데이터에 맞는 기법’ 선택 실무 도구.","url":"https://browser.timeviz.net/","confidence":"med"},
+  {"title_ko":"LifeLines: 환자기록 탐색 향상 (원논문)","source":"Plaisant, Shneiderman et al. (PubMed)","desc_ko":"타임라인으로 환자기록 항해·분석을 개선한 원조 논문 — 의료 시간 시각화의 학술적 출발점.","url":"https://pubmed.ncbi.nlm.nih.gov/9929185/","confidence":"med"},
+  {"title_ko":"High-speed visual estimation (preattentive)","source":"Healey, Booth, Enns — ACM ToCHI 1996","desc_ko":"전주의적 처리로 대량 요소를 고속 시각 추정하는 실험 — ‘훑어보기만으로 양/길이를 가늠’의 동료심사 근거.","url":"https://dl.acm.org/doi/10.1145/230562.230563","confidence":"med"}
+ ]}
+]};
+function renderRefs(filter){
+  const list = document.getElementById('refList'); let h='';
+  REF.categories.forEach(c=>{ if(filter && filter!==c.key) return;
+    h += `<div class="cat"><h4>${c.icon} ${c.title_ko} <span class="cnt">${c.items.length}</span></h4>`;
+    c.items.forEach(it=>{ const low = it.confidence==='low'||it.confidence==='med';
+      h += `<a class="ref" href="${it.url}" target="_blank" rel="noopener">
+        <div class="rt">${it.title_ko}${low?'<span class="lowc">확인요</span>':''}</div>
+        <div class="rs">${it.source}</div><div class="rd">${it.desc_ko}</div>
+        <div class="rlink">🔗 ${it.url} →</div></a>`; });
+    h += `</div>`; });
+  list.innerHTML = h;
+}
+function renderFilters(){
+  const fb = document.getElementById('filterbar');
+  let h = `<button class="fbtn on" onclick="setFilter(this,'')">전체</button>`;
+  REF.categories.forEach(c=> h += `<button class="fbtn" onclick="setFilter(this,'${c.key}')">${c.icon} ${c.title_ko}</button>`);
+  fb.innerHTML = h;
+}
+function setFilter(btn,k){ document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderRefs(k); }
+renderFilters(); renderRefs('');
+function openPanel(){ document.getElementById('ovl').classList.add('on'); document.getElementById('panel').classList.add('on'); document.getElementById('panel').setAttribute('aria-hidden','false'); }
+function closePanel(){ document.getElementById('ovl').classList.remove('on'); document.getElementById('panel').classList.remove('on'); document.getElementById('panel').setAttribute('aria-hidden','true'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePanel(); });
+</script>
+</body>
+</html>

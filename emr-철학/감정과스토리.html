@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>감정과 스토리 — 환자를 코드가 아닌 사람으로 — AI 시대 EMR 철학</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,'Apple SD Gothic Neo','Pretendard','Noto Sans KR',sans-serif; background:#FBFAF7; color:#22232a; -webkit-font-smoothing:antialiased; line-height:1.7; }
+  nav { position:sticky; top:0; z-index:50; height:52px; background:rgba(251,250,247,.92); backdrop-filter:blur(8px);
+        border-bottom:1px solid #ece9e2; display:flex; align-items:center; padding:0 16px; gap:10px; }
+  nav a.back { display:flex; align-items:center; gap:6px; color:#6b6b75; text-decoration:none; font-size:13px; padding:5px 10px; border-radius:8px; white-space:nowrap; }
+  nav a.back:hover { background:#f0eee8; }
+  nav .nt { font-size:13.5px; font-weight:600; color:#33343c; letter-spacing:-.3px; }
+  .refbtn { margin-left:auto; display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700;
+            color:#fff; background:#db2777; border:none; border-radius:9px; padding:8px 13px; cursor:pointer; }
+  .refbtn:hover { filter:brightness(.93); }
+  .wrap { max-width:860px; margin:0 auto; padding:34px 20px 80px; }
+  .eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; letter-spacing:.3px;
+             color:#db2777; background:#fce7f3; padding:5px 12px; border-radius:30px; margin-bottom:18px; }
+  h1 { font-size:29px; line-height:1.32; letter-spacing:-1px; font-weight:800; color:#1a1a22; margin-bottom:12px; }
+  h1 .x { color:#db2777; }
+  .tagline { font-size:16px; color:#6a6a73; line-height:1.7; margin-bottom:18px; font-weight:500; }
+
+  .wipbanner { display:flex; gap:11px; align-items:flex-start; background:#fffaf0; border:1px solid #f6e6c8; border-left:4px solid #d97706; border-radius:13px; padding:14px 16px; margin:4px 0 24px; }
+  .wipbanner .ic { font-size:17px; } .wipbanner .tx { font-size:13.5px; color:#7a5b1e; line-height:1.65; }
+  .wipbanner .tx b { color:#92400e; }
+
+  p.lead { font-size:18px; line-height:1.75; color:#2a2b33; margin:0 0 22px; letter-spacing:-.2px; }
+  p.lead b { color:#15151c; }
+
+  /* 감정 곡선 */
+  .curvecard { background:#fff; border:1px solid #ece9e2; border-radius:18px; box-shadow:0 1px 4px rgba(0,0,0,.03); padding:18px 16px 12px; margin:8px 0 14px; }
+  .curvecard .ch { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:4px; padding:0 4px; }
+  .curvecard .ch .t { font-size:15px; font-weight:800; color:#1a1a22; }
+  .curvecard .ch .s { font-size:12px; color:#9a988f; }
+  .curvewrap { overflow-x:auto; }
+  svg.curve { display:block; min-width:620px; width:100%; }
+  .draftpill { font-size:10px; font-weight:800; color:#b45309; background:#fdf3e3; border-radius:20px; padding:2px 9px; }
+
+  /* 기승전결 카드 */
+  h2 { font-size:14px; font-weight:800; letter-spacing:.4px; color:#9a988f; text-transform:uppercase; margin:32px 0 12px; }
+  .arc { display:grid; grid-template-columns:repeat(4,1fr); gap:11px; }
+  .arccard { border-radius:14px; padding:15px 15px 14px; border:1px solid; position:relative; min-height:150px; display:flex; flex-direction:column; }
+  .arccard .stage { font-size:11px; font-weight:800; letter-spacing:.5px; margin-bottom:4px; }
+  .arccard .when { font-size:10.5px; color:#9a988f; font-weight:700; margin-bottom:7px; }
+  .arccard .body { font-size:13px; color:#44434c; line-height:1.6; }
+  .arccard .emo { margin-top:auto; padding-top:9px; font-size:11.5px; font-weight:700; }
+  .arc .a0 { background:#f1f8f2; border-color:#d4e8d6; } .arc .a0 .stage{color:#2e7d32;}
+  .arc .a1 { background:#eef0fe; border-color:#dcdcfb; } .arc .a1 .stage{color:#4f46e5;}
+  .arc .a2 { background:#fdf3f3; border-color:#f6dada; } .arc .a2 .stage{color:#c0392b;}
+  .arc .a3 { background:#fce7f3; border-color:#f6d4e6; } .arc .a3 .stage{color:#db2777;}
+
+  /* 서사 초안 */
+  .story { background:#fff; border:1px solid #ece9e2; border-radius:16px; padding:20px 22px; margin:8px 0 8px; position:relative; }
+  .story .qt { font-size:34px; color:#f0d4e2; line-height:0; position:absolute; top:18px; left:16px; }
+  .story p { font-size:15.5px; color:#34343c; line-height:1.85; margin:0 0 12px; padding-left:14px; }
+  .story p:last-child { margin-bottom:0; } .story p b { color:#15151c; }
+  .editrow { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+  .editrow .eb { font-size:12px; font-weight:700; border:1px solid #ece9e2; background:#fff; color:#6a6a73; border-radius:9px; padding:7px 12px; cursor:pointer; }
+  .editrow .eb:hover { border-color:#db2777; color:#db2777; }
+  .feed { font-size:11.5px; color:#a7a59d; margin-top:8px; min-height:16px; }
+
+  .callout { border-radius:14px; padding:16px 19px; margin:24px 0; font-size:14.5px; line-height:1.7; }
+  .callout.note { background:#fdf2f8; border:1px solid #f6d8e8; border-left:3px solid #db2777; color:#4a2740; }
+  .callout .ct { font-size:12px; font-weight:800; margin-bottom:7px; color:#db2777; }
+  p { font-size:16px; margin:0 0 18px; color:#33343c; } p b { color:#15151c; font-weight:700; }
+
+  .pager { display:flex; justify-content:space-between; gap:12px; margin-top:42px; padding-top:22px; border-top:1px solid #ece9e2; }
+  .pager a { flex:1; text-decoration:none; padding:14px 16px; border-radius:12px; border:1px solid #ece9e2; background:#fff; color:#33343c; font-size:13.5px; line-height:1.5; transition:border-color .15s, transform .15s; }
+  .pager a:hover { border-color:#db2777; transform:translateY(-2px); }
+  .pager a.next { text-align:right; } .pager .pd { font-size:11px; color:#a7a59d; font-weight:700; margin-bottom:3px; }
+
+  /* 패널 (시간지도와 동일 구조, 핑크 액센트) */
+  .ovl { position:fixed; inset:0; background:rgba(20,18,30,.42); z-index:200; opacity:0; pointer-events:none; transition:opacity .22s; }
+  .ovl.on { opacity:1; pointer-events:auto; }
+  .panel { position:fixed; top:0; right:0; bottom:0; width:min(520px,94vw); background:#FBFAF7; z-index:201;
+           transform:translateX(102%); transition:transform .26s cubic-bezier(.22,.61,.36,1); box-shadow:-12px 0 40px rgba(0,0,0,.18); display:flex; flex-direction:column; }
+  .panel.on { transform:translateX(0); }
+  .panel header { display:flex; align-items:center; gap:10px; padding:16px 18px; border-bottom:1px solid #ece9e2; background:#fff; }
+  .panel header h3 { font-size:15.5px; font-weight:800; color:#1a1a22; }
+  .panel header .sub { font-size:11.5px; color:#9a988f; }
+  .panel header .close { margin-left:auto; border:none; background:#f0eee8; width:30px; height:30px; border-radius:8px; cursor:pointer; font-size:15px; color:#6b6b75; }
+  .panel .body { overflow-y:auto; padding:14px 16px 40px; }
+  .filterbar { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .fbtn { font-size:11.5px; font-weight:700; border:1px solid #e2dfd6; background:#fff; color:#6a6a73; border-radius:20px; padding:5px 11px; cursor:pointer; }
+  .fbtn.on { background:#db2777; color:#fff; border-color:#db2777; }
+  .cat { margin-bottom:20px; }
+  .cat h4 { font-size:12.5px; font-weight:800; color:#db2777; margin-bottom:9px; display:flex; align-items:center; gap:7px; }
+  .cat h4 .cnt { font-size:10.5px; color:#a7a59d; font-weight:700; }
+  .ref { display:block; text-decoration:none; background:#fff; border:1px solid #ece9e2; border-radius:12px; padding:12px 14px; margin-bottom:9px; transition:border-color .15s, transform .12s; }
+  .ref:hover { border-color:#db2777; transform:translateY(-2px); }
+  .ref .rt { font-size:14px; font-weight:800; color:#1a1a22; line-height:1.4; }
+  .ref .rs { font-size:11px; color:#9a988f; font-weight:700; margin:2px 0 5px; }
+  .ref .rd { font-size:12.5px; color:#55545d; line-height:1.6; }
+  .ref .rlink { font-size:11px; color:#db2777; font-weight:700; margin-top:6px; display:inline-flex; gap:4px; word-break:break-all; }
+  .ref .lowc { display:inline-block; font-size:9.5px; font-weight:800; color:#b45309; background:#fdf3e3; border-radius:5px; padding:1px 5px; margin-left:6px; }
+  .panelnote { font-size:11.5px; color:#a7a59d; line-height:1.6; border-top:1px solid #ece9e2; padding-top:12px; }
+
+  @media (max-width:680px){ h1{font-size:24px;} .arc{grid-template-columns:1fr 1fr;} .wrap{padding:24px 14px 70px;} }
+</style>
+</head>
+<body>
+<nav>
+  <a class="back" href="../emr-가독성가이드.html">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    가독성 가이드로
+  </a>
+  <span style="color:#d8d4cb;">|</span>
+  <span class="nt">감정과 스토리</span>
+  <button class="refbtn" onclick="openPanel()">📚 관련자료 살펴보기</button>
+</nav>
+
+<div class="wrap">
+  <div class="eyebrow"><span>💗</span> 핵심 3 · 감정과 스토리</div>
+  <h1>환자는 <span class="x">코드 목록</span>이 아니라 <span class="x">이야기</span>를 가진 사람입니다</h1>
+  <div class="tagline">차트 기록(호소·내원·치료)을 엮어 환자의 기승전결과 희노애락을 — AI가 초안으로 그려주고, 원장이 판단한다</div>
+
+  <div class="wipbanner">
+    <span class="ic">🚧</span>
+    <span class="tx"><b>아직 발달 중인 영역입니다.</b> 이 페이지는 “차트 기록으로 환자 서사를 어디까지 그릴 수 있나”를 가늠하기 위한 <b>초안·탐색</b>입니다.
+    아래 감정 곡선과 서사는 <b>AI가 기록에서 추론한 가설</b>이며, 임상 사실이 아닙니다 — 원장이 보고 판단·수정하시라고 우상단에 <b>📚 관련자료</b>(잘하는 사례·기업·이론·논문)를 모아 두었습니다.</span>
+  </div>
+
+  <p class="lead">한 환자의 차트에서 “언제 무엇을 했나”만이 아니라 <b>“그때 어떤 마음이었을까”</b>를 같이 봅니다. 같은 기록도 곡선으로 보면 — 불편이 깊었던 골짜기와, 안도로 올라오는 마무리가 한눈에 들어옵니다.</p>
+
+  <div class="curvecard">
+    <div class="ch"><span class="t">😊 감정 곡선 — 한 환자의 여정</span> <span class="s">가로=시간 / 세로=마음 상태</span> <span class="draftpill">AI 추론 초안</span></div>
+    <div class="curvewrap"><svg class="curve" id="curve" viewBox="0 0 640 280" preserveAspectRatio="xMidYMid meet"></svg></div>
+  </div>
+
+  <h2>기승전결 — AI가 엮은 줄거리</h2>
+  <div class="arc" id="arc"></div>
+
+  <h2>서사 초안 (원장 검수용)</h2>
+  <div class="story">
+    <span class="qt">“</span>
+    <p><b>기.</b> 2024년 1월, 이 환자는 처음 우리 치과 문을 열었습니다. 검사를 받고 치료 계획까지 세웠지만 — 당장 급한 통증이 없어서였을까요 — 그대로 일상으로 돌아갔습니다.</p>
+    <p><b>승.</b> 2년이 넘게 지난 2026년 봄, 다시 마음을 먹고 계획을 손봅니다. 그러던 4월의 어느 날, <b>“우측이 시려요”</b> — 오른쪽 이가 시리다는 호소와 함께 다시 진료실에 앉았습니다.</p>
+    <p><b>전.</b> 검사대에서 환자는 <b>“맨 뒤 큰어금니가 시려요”</b>라고 말합니다. 검사 결과는 비가역적 치수염 — 단순한 시림이 아니라 신경치료가 필요한 상태였습니다. 불안이 가장 깊었던 지점입니다.</p>
+    <p><b>결.</b> 그날로 근관치료를 시작해 임시로 봉했고, 한 주 뒤 크라운으로 마무리하기로 합니다. 시린 통증의 골짜기를 지나, 회복과 안도로 올라오는 중입니다.</p>
+    <div class="editrow">
+      <button class="eb" onclick="feed('🔁 “이 환자는 불안이 큰 편 — 따뜻한 설명 우선” 같은 톤으로 다시 써달라고 AI에 요청하는 버튼이 들어갈 자리입니다.')">🔁 톤 바꿔 다시 쓰기</button>
+      <button class="eb" onclick="feed('✏️ 원장이 직접 문장을 고치고, 고친 내용을 AI가 학습하도록 저장하는 자리입니다.')">✏️ 직접 수정</button>
+      <button class="eb" onclick="feed('📎 곡선의 각 점을 실제 차트 기록(메모·검사·처치)으로 역추적해 “근거 보기”를 펼치는 자리입니다.')">📎 근거 기록 보기</button>
+    </div>
+    <div class="feed" id="feed"></div>
+  </div>
+
+  <div class="callout note">
+    <div class="ct">왜 ‘이야기’인가 — 기억과 공감</div>
+    사람은 경험을 <b>절정과 끝</b>으로 기억합니다(절정-종료 법칙, Kahneman). 환자가 진료를 어떻게 ‘기억’할지는 가장 아팠던 순간과 마지막 순간이 좌우합니다 — 곡선의 골짜기와 마무리를 보면 그 설계가 보입니다. 또 환자를 ‘이야기’로 보는 훈련(서사의학, Rita Charon)은 의료진의 공감을 실제로 높입니다. 자세한 근거는 우상단 <b>📚 관련자료 살펴보기</b>에 정리해 두었습니다.
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="공간지도.html"><div class="pd">← 이전 핵심</div>공간지도 — 위치를 그림으로</a>
+    <a class="next" href="../emr-가독성가이드.html"><div class="pd">돌아가기 →</div>AI 시대 EMR 철학 — 가독성 가이드</a>
+  </div>
+</div>
+
+<!-- 관련자료 패널 -->
+<div class="ovl" id="ovl" onclick="closePanel()"></div>
+<aside class="panel" id="panel" aria-hidden="true">
+  <header>
+    <div><h3>📚 감정·스토리를 잘 다룬 자료들</h3><div class="sub">서사·여정맵·감정 — 사례·기업·이론·논문</div></div>
+    <button class="close" onclick="closePanel()">✕</button>
+  </header>
+  <div class="body">
+    <div class="filterbar" id="filterbar"></div>
+    <div id="refList"></div>
+    <div class="panelnote">이 영역은 아직 미정입니다 — 목록은 방향을 잡기 위한 자료 모음이며, 원장 판단의 재료입니다. <b style="color:#b45309">확인요</b>는 링크가 바뀌었을 수 있어 클릭 시 확인이 필요한 항목입니다.</div>
+  </div>
+</aside>
+
+<script>
+/* ===== 감정 곡선 (출처: 사용자 제공 차트, AI 추론 가설) ===== */
+const PTS = [
+  {x:0.04, v:0.4,  emo:'🙂', t:'초진', d:'새 치과, 약간의 긴장'},
+  {x:0.30, v:-0.3, emo:'😐', t:'공백 2년', d:'치료를 미뤄둠', dim:true},
+  {x:0.50, v:0.5,  emo:'🙂', t:'계획 재수립', d:'다시 마음먹음'},
+  {x:0.66, v:-1.3, emo:'😣', t:'“우측이 시려요”', d:'불편·걱정'},
+  {x:0.76, v:-1.7, emo:'😟', t:'비가역 치수염', d:'신경치료 필요 — 가장 불안'},
+  {x:0.86, v:-0.4, emo:'😮‍💨', t:'근관치료 시작', d:'통증 가라앉기 시작'},
+  {x:0.97, v:1.3,  emo:'😌', t:'크라운 예정', d:'마무리·안도'}
+];
+(function drawCurve(){
+  const W=640,H=280, padL=24,padR=24,padT=42,padB=46;
+  const x = u => padL + u*(W-padL-padR);
+  const y = v => padT + ( (2-v)/4 )*(H-padT-padB);  // v: -2..+2
+  let svg='';
+  // zero line + zones
+  svg += `<rect x="0" y="${padT}" width="${W}" height="${y(0)-padT}" fill="#fdf5f8"/>`;
+  svg += `<rect x="0" y="${y(0)}" width="${W}" height="${H-padB-y(0)}" fill="#fff8f3"/>`;
+  svg += `<line x1="0" y1="${y(0)}" x2="${W}" y2="${y(0)}" stroke="#ece9e2" stroke-width="1"/>`;
+  svg += `<text x="6" y="${padT+12}" font-size="11" fill="#16a34a" font-weight="700">😊 안도·만족</text>`;
+  svg += `<text x="6" y="${H-padB-6}" font-size="11" fill="#c0392b" font-weight="700">😣 불편·불안</text>`;
+  // path
+  let dpath='';
+  PTS.forEach((p,i)=>{ dpath += (i?'L':'M')+x(p.x).toFixed(1)+','+y(p.v).toFixed(1)+' '; });
+  svg += `<path d="${dpath}" fill="none" stroke="#db2777" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>`;
+  // points
+  PTS.forEach(p=>{
+    const cx=x(p.x), cy=y(p.v);
+    svg += `<circle cx="${cx}" cy="${cy}" r="${p.dim?5:7}" fill="${p.dim?'#cbb9c4':'#db2777'}" stroke="#fff" stroke-width="2.5"/>`;
+    svg += `<text x="${cx}" y="${cy-13}" font-size="15" text-anchor="middle">${p.emo}</text>`;
+    const above = p.v<0;
+    const ly = above ? cy+22 : cy-24;
+    svg += `<text x="${cx}" y="${ly}" font-size="10.5" text-anchor="middle" fill="#55545d" font-weight="700">${p.t}</text>`;
+  });
+  svg += `<text x="${W-6}" y="${H-8}" font-size="10" text-anchor="end" fill="#b7b2a6">→ 시간 (초진 → 오늘 → 예정)</text>`;
+  document.getElementById('curve').innerHTML = svg;
+})();
+
+/* ===== 기승전결 ===== */
+const ARC = [
+  {cls:'a0', stage:'기 · 발단', when:'2024.01', body:'초진·치료계획 수립. 급한 통증 없이 일상으로.', emo:'🙂 잔잔한 시작', ec:'#2e7d32'},
+  {cls:'a1', stage:'승 · 전개', when:'2026.03~04', body:'2년 만에 계획 재수립. “우측이 시려요” 호소로 재내원.', emo:'😟 불편의 시작', ec:'#4f46e5'},
+  {cls:'a2', stage:'전 · 위기', when:'2026.04.30', body:'검사 결과 비가역적 치수염 — 신경치료 결정. 불안의 최저점.', emo:'😣 가장 깊은 골짜기', ec:'#c0392b'},
+  {cls:'a3', stage:'결 · 해결', when:'2026.05~', body:'근관치료 후 임시 봉함, 크라운으로 마무리 예정.', emo:'😌 회복·안도', ec:'#db2777'}
+];
+document.getElementById('arc').innerHTML = ARC.map(a=>
+  `<div class="arccard ${a.cls}"><div class="stage">${a.stage}</div><div class="when">${a.when}</div>
+   <div class="body">${a.body}</div><div class="emo" style="color:${a.ec}">${a.emo}</div></div>`).join('');
+
+function feed(msg){ document.getElementById('feed').textContent = msg; }
+
+/* ===== 관련자료 ===== */
+const REF = {"categories":[
+ {"key":"cases","title_ko":"사례·제품","icon":"🧪","items":[
+  {"title_ko":"HealthTale — 환자 서술을 타임라인 스토리로","source":"arXiv (Smith, Chin, Munzner, 2026)","desc_ko":"환자의 자유 서술을 ‘건강 고민별·시간순 이벤트’로 자동 구조화해 타임라인 스토리로 — 차트 기록을 서사 뷰로 바꾸는 가장 직접적인 최신 레퍼런스.","url":"https://arxiv.org/abs/2605.20207","confidence":"med"},
+  {"title_ko":"Health Storylines — 치료·기분·수면 한 줄에","source":"Self Care Catalysts","desc_ko":"치료 일정과 기분·수면·증상을 같은 타임라인에 올려 요약하는 환자 앱 — 임상 이벤트와 감정 데이터를 엮는 실제 UI.","url":"https://www.healthstorylines.com/","confidence":"high"},
+  {"title_ko":"Smaply 감정 여정맵 사례 모음","source":"Smaply Blog","desc_ko":"감정 곡선(highs/lows)이 들어간 실제 여정맵 예시 — 불안·통증·안도·만족을 한 곡선으로 그리는 직접 본보기.","url":"https://www.smaply.com/blog/example-journey-maps","confidence":"med"},
+  {"title_ko":"통합 환자 여정맵(IPJM) — 감정·물리 8요소","source":"OECD OPSI / Center for Health Design","desc_ko":"환자 여정을 감정여정·물리여정 등 8축으로 매핑하는 의료 전용 도구 — ‘기승전결+희노애락’ 골격에 대응되는 검증된 프레임.","url":"https://oecd-opsi.org/innovations/the-integrated-patient-journey-map-a-design-tool-for-embedding-the-pillars-of-quality-in-healthcare-solutions/","confidence":"med"},
+  {"title_ko":"감정 여정(Emotional Journey) 도구 정의","source":"Service Design Tools","desc_ko":"서비스 디자인 표준 도구로서 ‘감정 여정’의 정의·작성법 — 감정 곡선을 여정 위에 얹는 교과서적 1차 자료.","url":"https://servicedesigntools.org/tools/emotional-journey","confidence":"high"}
+ ]},
+ {"key":"companies","title_ko":"기업·방법론","icon":"🏢","items":[
+  {"title_ko":"NN/g 여정 매핑 101 + 감정 곡선","source":"Nielsen Norman Group","desc_ko":"여정맵 표준 정의와 ‘감정을 한 선으로 그려 기쁨↔좌절을 드러내는’ 감정 곡선 방법론 — 희노애락 시각화의 출발점.","url":"https://www.nngroup.com/articles/journey-mapping-101/","confidence":"high"},
+  {"title_ko":"NN/g 공감지도","source":"Nielsen Norman Group","desc_ko":"사용자의 생각·느낌·말·행동을 4분면으로 모으는 공감지도 — 환자를 ‘코드 목록’ 아닌 사람으로 보게 하는 표준 프레임.","url":"https://www.nngroup.com/articles/empathy-mapping/","confidence":"high"},
+  {"title_ko":"콜럼비아 서사의학 + 평행차트","source":"Columbia University (Rita Charon)","desc_ko":"차트에 안 들어가는 환자 이야기를 따로 적는 ‘평행차트’ — ‘감정과 스토리’ 기능의 사상적 뿌리이자 명분.","url":"https://www.mhe.cuimc.columbia.edu/our-divisions/division-narrative-medicine","confidence":"med"},
+  {"title_ko":"Abridge — 진료대화를 서사형 노트로","source":"Abridge","desc_ko":"진료 대화를 듣고 임상 노트와 환자용 요약을 생성하며 근거 음원으로 역추적 — 한 회차를 ‘서사 단위’로 압축하는 상용 AI.","url":"https://www.abridge.com/","confidence":"med"},
+  {"title_ko":"Nuance DAX Copilot — 환자친화 방문요약","source":"Nuance / Microsoft","desc_ko":"진료 대화로 표준 노트와 환자용 방문후 요약을 EHR 안에서 생성 — 임상 데이터를 사람이 읽는 서사로 요약하는 엔진.","url":"https://www.nuance.com/healthcare/dragon-ai-clinical-solutions/dax-copilot.html","confidence":"med"},
+  {"title_ko":"UXPressia — 감정상태 분류형 여정맵","source":"UXPressia","desc_ko":"기대·좌절·만족·기쁨 등 감정을 이모지 곡선으로 편집하는 도구 — 감정 라벨링 UX를 그대로 본뜰 에디터.","url":"https://uxpressia.com/blog/patient-journey-mapping","confidence":"med"}
+ ]},
+ {"key":"theory","title_ko":"심리·서사 이론","icon":"🧠","items":[
+  {"title_ko":"절정-종료 법칙(Peak-End Rule)","source":"Kahneman & Redelmeier","desc_ko":"기억된 경험은 ‘절정’과 ‘끝’의 평균(통증 실험으로 입증) — 환자가 진료를 어떻게 기억하는지, 서사의 ‘결’ 설계 근거.","url":"https://en.wikipedia.org/wiki/Peak%E2%80%93end_rule","confidence":"high"},
+  {"title_ko":"이야기의 6가지 감정 곡선(빅데이터 입증)","source":"Reagan et al., EPJ Data Science 2016","desc_ko":"1,700여 작품의 감정 곡선을 분석해 6대 기본 형태를 입증 — 환자 서사 곡선을 몇 유형으로 분류하는 직접 근거.","url":"https://epjdatascience.springeropen.com/articles/10.1140/epjds/s13688-016-0093-1","confidence":"high"},
+  {"title_ko":"보네거트 ‘이야기의 모양’","source":"Kurt Vonnegut (MIT Tech Review)","desc_ko":"이야기를 가로=시간·세로=행복도 그래프로 그릴 수 있다는 강의 — 감정을 시간축 곡선으로 그리는 발상의 원조.","url":"https://www.technologyreview.com/2016/07/06/158961/data-mining-reveals-the-six-basic-emotional-arcs-of-storytelling/","confidence":"med"},
+  {"title_ko":"프라이타크 피라미드 — 기승전결 5단","source":"StudioBinder (해설)","desc_ko":"발단·상승·절정·하강·결말 5단계 극 구조 — ‘기승전결’ 골격을 받쳐주는 고전 서사 구조.","url":"https://www.studiobinder.com/blog/what-is-freytags-pyramid-definition/","confidence":"med"},
+  {"title_ko":"감성 컴퓨팅(Affective Computing)","source":"Rosalind Picard, MIT Media Lab","desc_ko":"컴퓨터가 감정을 인식·표현하게 하는 분야의 창시 그룹 — 차트 텍스트에서 감정을 자동 추출하는 AI의 학문적 모태.","url":"https://www.media.mit.edu/groups/affective-computing/overview/","confidence":"high"}
+ ]},
+ {"key":"papers","title_ko":"논문·연구","icon":"📄","items":[
+  {"title_ko":"Narrative Visualization: 데이터로 이야기하기","source":"Segel & Heer, IEEE TVCG 2010","desc_ko":"데이터 스토리텔링의 7가지 장르·저자주도↔독자주도 축을 제시한 기념비적 논문 — 차트를 ‘읽히는 서사 화면’으로 설계하는 토대.","url":"https://doi.org/10.1109/TVCG.2010.179","confidence":"high"},
+  {"title_ko":"서사의학이 의사 공감을 높인다 (RCT)","source":"BMC Medical Education","desc_ko":"서사의학 교육이 공감·인간적 돌봄 점수를 유의하게 높였다는 무작위대조시험 — ‘환자를 사람으로 본다’의 효과 근거.","url":"https://bmcmededuc.biomedcentral.com/articles/10.1186/s12909-017-0952-x","confidence":"med"},
+  {"title_ko":"EHR 자유서술 증상의 NLP 추출 (체계적 고찰)","source":"JAMIA / PMC","desc_ko":"EHR 자유서술에서 통증·불안 등 증상을 NLP로 추출하는 연구들의 체계적 고찰 — 메모에서 감정·증상 신호를 뽑는 기술 현황.","url":"https://pmc.ncbi.nlm.nih.gov/articles/PMC6657282/","confidence":"med"},
+  {"title_ko":"Outflow — 경로·결과·요인 흐름 시각화","source":"Wongsuphasawat & Gotz, IEEE TVCG","desc_ko":"이벤트 시퀀스의 경로별 결과와 영향 요인을 함께 보여주는 기법 — 서사의 ‘전환점→결말’ 인과를 시각화하는 연구.","url":"https://pubmed.ncbi.nlm.nih.gov/26357175/","confidence":"med"}
+ ]}
+]};
+function renderRefs(filter){
+  const list=document.getElementById('refList'); let h='';
+  REF.categories.forEach(c=>{ if(filter && filter!==c.key) return;
+    h+=`<div class="cat"><h4>${c.icon} ${c.title_ko} <span class="cnt">${c.items.length}</span></h4>`;
+    c.items.forEach(it=>{ const low=it.confidence!=='high';
+      h+=`<a class="ref" href="${it.url}" target="_blank" rel="noopener"><div class="rt">${it.title_ko}${low?'<span class="lowc">확인요</span>':''}</div>
+      <div class="rs">${it.source}</div><div class="rd">${it.desc_ko}</div><div class="rlink">🔗 ${it.url} →</div></a>`; });
+    h+=`</div>`; });
+  list.innerHTML=h;
+}
+function renderFilters(){ const fb=document.getElementById('filterbar');
+  let h=`<button class="fbtn on" onclick="setFilter(this,'')">전체</button>`;
+  REF.categories.forEach(c=> h+=`<button class="fbtn" onclick="setFilter(this,'${c.key}')">${c.icon} ${c.title_ko}</button>`);
+  fb.innerHTML=h; }
+function setFilter(b,k){ document.querySelectorAll('.fbtn').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderRefs(k); }
+renderFilters(); renderRefs('');
+function openPanel(){ document.getElementById('ovl').classList.add('on'); document.getElementById('panel').classList.add('on'); document.getElementById('panel').setAttribute('aria-hidden','false'); }
+function closePanel(){ document.getElementById('ovl').classList.remove('on'); document.getElementById('panel').classList.remove('on'); document.getElementById('panel').setAttribute('aria-hidden','true'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePanel(); });
+</script>
+</body>
+</html>
