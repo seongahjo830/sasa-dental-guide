@@ -111,6 +111,69 @@
     background: #fff; border-radius: 12px; border: 1px dashed #cdd3dd;
   }
 
+  /* ── 바둑판 버튼 그리드 (가로 나열) ── */
+  .guide-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px; margin-top: 6px;
+  }
+  .guide-card {
+    background: #fff; border: 1.5px solid #e8eaed; border-radius: 14px;
+    padding: 15px 14px 13px; cursor: pointer; text-align: left;
+    display: flex; flex-direction: column; gap: 7px; min-height: 132px;
+    transition: transform .16s, box-shadow .16s, border-color .16s;
+    font-family: inherit; color: inherit;
+  }
+  .guide-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,.12); border-color: #1a1a2e;
+  }
+  .guide-card .gc-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 800; flex-shrink: 0;
+  }
+  .guide-card .gc-icon.blue   { background: #e8f0fe; color: #1565C0; }
+  .guide-card .gc-icon.green  { background: #e8f5e9; color: #2e7d32; }
+  .guide-card .gc-icon.orange { background: #fff3e0; color: #e65100; }
+  .guide-card .gc-name { font-size: 15px; font-weight: 800; letter-spacing: -0.4px; }
+  .guide-card .gc-sub  { font-size: 11.5px; color: #888; line-height: 1.5; }
+  .guide-card .gc-open {
+    margin-top: auto; font-size: 12px; font-weight: 700; color: #1565C0;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .guide-card.coming {
+    border-style: dashed; border-color: #cdd3dd; cursor: default;
+    background: transparent;
+  }
+  .guide-card.coming:hover { transform: none; box-shadow: none; border-color: #cdd3dd; }
+  .guide-card.coming .gc-icon { background: #f0f2f5; color: #b6bcc6; }
+  .guide-card.coming .gc-name, .guide-card.coming .gc-sub { color: #9aa3af; }
+
+  /* ── 상세 모달 ── */
+  .g-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.55); z-index: 1000;
+    justify-content: center; align-items: flex-start;
+    padding: 24px 16px; overflow-y: auto;
+  }
+  .g-overlay.open { display: flex; }
+  .g-modal {
+    display: none; background: #fff; border-radius: 18px;
+    width: 100%; max-width: 680px; margin: auto;
+    padding: 30px 28px 34px; position: relative;
+    box-shadow: 0 16px 56px rgba(0,0,0,.28);
+  }
+  .g-modal.open { display: block; }
+  .g-close {
+    position: absolute; top: 16px; right: 16px;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #f0f2f5; border: none; cursor: pointer;
+    font-size: 15px; color: #555;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .g-close:hover { background: #e0e3e8; }
+
   @media (max-width: 560px) {
     .emr-compare { grid-template-columns: 1fr; }
     .emr-mock-head, .emr-mock-row { grid-template-columns: 76px 44px 1fr 56px; font-size: 11px; }
@@ -140,8 +203,44 @@
     한 환자의 5년 치료 기록을 30초 안에 파악하려면 — 시각화 구조가 달라야 한다.
   </div>
 
+  <!-- 바둑판 버튼 (가로 나열) -->
+  <div class="guide-grid">
+    <button class="guide-card" data-modal="m-vmodel">
+      <div class="gc-icon blue">V</div>
+      <div class="gc-name">V-모델</div>
+      <div class="gc-sub">증상→검사→진단→처치→결과, 인과 사슬로</div>
+      <div class="gc-open">자세히 &#10142;</div>
+    </button>
+
+    <button class="guide-card" data-modal="m-row">
+      <div class="gc-icon green">&#8597;</div>
+      <div class="gc-name">확장행</div>
+      <div class="gc-sub">요약 1줄 → 클릭하면 상세 펼침</div>
+      <div class="gc-open">자세히 &#10142;</div>
+    </button>
+
+    <button class="guide-card" data-modal="m-swim">
+      <div class="gc-icon orange">&#8801;</div>
+      <div class="gc-name">스윔레인 형식</div>
+      <div class="gc-sub">진료 카테고리별 평행 트랙</div>
+      <div class="gc-open">자세히 &#10142;</div>
+    </button>
+
+    <div class="guide-card coming">
+      <div class="gc-icon">&#9203;</div>
+      <div class="gc-name">추가 예정</div>
+      <div class="gc-sub">히트맵 뷰 · 치아별 개인 타임라인 · 비용 흐름 시각화</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 상세 모달들 -->
+<div class="g-overlay" id="g-overlay">
+
   <!-- ① V-모델 -->
-  <div class="card">
+  <div class="g-modal" id="m-vmodel">
+    <button class="g-close" aria-label="닫기">&#10005;</button>
     <div class="emr-section">
       <div class="emr-section-header">
         <div class="emr-section-icon blue">V</div>
@@ -185,7 +284,8 @@
   </div>
 
   <!-- ② 확장행 -->
-  <div class="card">
+  <div class="g-modal" id="m-row">
+    <button class="g-close" aria-label="닫기">&#10005;</button>
     <div class="emr-section">
       <div class="emr-section-header">
         <div class="emr-section-icon green">&#8597;</div>
@@ -222,7 +322,8 @@
   </div>
 
   <!-- ③ 스윔레인 -->
-  <div class="card">
+  <div class="g-modal" id="m-swim">
+    <button class="g-close" aria-label="닫기">&#10005;</button>
     <div class="emr-section">
       <div class="emr-section-header">
         <div class="emr-section-icon orange">&#8801;</div>
@@ -268,11 +369,32 @@
     </div>
   </div>
 
-  <div class="emr-coming">
-    &#9203; 추가 예정: 히트맵 뷰 / 치아별 개인 타임라인 / 비용 흐름 시각화
-  </div>
-
 </div>
+
+<script>
+(function () {
+  var overlay = document.getElementById('g-overlay');
+  function openModal(id) {
+    var panel = document.getElementById(id);
+    if (!panel) return;
+    overlay.querySelectorAll('.g-modal').forEach(function (m) { m.classList.remove('open'); });
+    panel.classList.add('open');
+    overlay.classList.add('open');
+  }
+  function closeModal() {
+    overlay.classList.remove('open');
+    overlay.querySelectorAll('.g-modal').forEach(function (m) { m.classList.remove('open'); });
+  }
+  document.querySelectorAll('.guide-card[data-modal]').forEach(function (btn) {
+    btn.addEventListener('click', function () { openModal(btn.getAttribute('data-modal')); });
+  });
+  overlay.querySelectorAll('.g-close').forEach(function (b) {
+    b.addEventListener('click', closeModal);
+  });
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+})();
+</script>
 
 </body>
 </html>
