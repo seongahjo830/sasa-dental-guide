@@ -29,14 +29,14 @@
   .pano .midline { position:absolute; top:6%; bottom:6%; left:50%; width:1px; background:rgba(255,255,255,.14); }
   .pano .side { position:absolute; top:9px; font-size:10.5px; font-weight:800; letter-spacing:.5px; color:rgba(255,255,255,.55); }
   .pano .side.r { left:14px; } .pano .side.l { right:14px; }
-  .pin { position:absolute; transform:translate(-50%,-50%); z-index:3; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; }
-  .pin .dot { width:18px; height:18px; border-radius:50%; border:3px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.5); transition:transform .15s; }
-  .pin .tag { font-size:11px; font-weight:800; color:#fff; background:rgba(15,17,21,.78); border:1px solid rgba(255,255,255,.18); padding:2px 8px; border-radius:20px; white-space:nowrap; backdrop-filter:blur(3px); transition:transform .15s; }
-  .pin:hover .dot, .pin.active .dot { transform:scale(1.25); }
-  .pin.active .tag { transform:scale(1.06); }
-  .pin .halo { position:absolute; top:0; left:50%; transform:translate(-50%,-2px); width:18px; height:18px; border-radius:50%; }
-  .pin.active .halo { animation:pulse 1.4s infinite; }
-  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,255,255,.5);} 100%{box-shadow:0 0 0 16px rgba(255,255,255,0);} }
+  /* 치식 번호 버튼 (dentweb식 오버레이) */
+  .tbtn { position:absolute; transform:translate(-50%,-50%); z-index:3; min-width:25px; height:21px; padding:0 5px;
+          font-size:11.5px; font-weight:800; font-variant-numeric:tabular-nums; border-radius:6px;
+          background:rgba(38,42,52,.62); color:rgba(255,255,255,.80); border:1px solid rgba(255,255,255,.20);
+          display:flex; align-items:center; justify-content:center; cursor:default; backdrop-filter:blur(2px); transition:transform .12s, box-shadow .12s; }
+  .tbtn.tx { cursor:pointer; color:#fff; border-color:rgba(255,255,255,.55); box-shadow:0 1px 6px rgba(0,0,0,.55); }
+  .tbtn.tx:hover, .tbtn.active { transform:translate(-50%,-50%) scale(1.2); z-index:4; }
+  .tbtn.active { box-shadow:0 0 0 2px #fff, 0 2px 10px rgba(0,0,0,.5); }
   .stagebar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:11px 15px; background:#15171d; border-top:1px solid rgba(255,255,255,.07); }
   .stagebar .hint { font-size:12px; color:rgba(255,255,255,.55); }
   .stagebar .hint b { color:#fff; }
@@ -104,7 +104,7 @@
   <h1>위치는 <span class="x">‘#26’</span>이 아니라 <span class="x">입속 그 자리</span>에 표시합니다</h1>
   <div class="tagline">‘#26’을 ‘왼쪽 위 어금니’로 번역하는 한 박자를 없앤다 — 파노라마 위 그 자리에 바로 찍는다</div>
 
-  <p class="lead">치료를 글자(#26)로 적지 않고, <b>실제 파노라마 사진의 그 위치</b>에 핀을 찍었습니다. 핀을 누르면 같은 부위를 찍은 <b>구내 사진</b>이 환하게 살아납니다 — “어디”를 머리로 번역할 필요가 없습니다.</p>
+  <p class="lead">치료를 글자(#26)로만 적지 않고, <b>실제 파노라마 위 그 치아 자리</b>에 치식 번호 버튼을 얹었습니다. 치료한 치아는 색으로 보이고, 누르면 같은 부위를 찍은 <b>구내 사진</b>이 환하게 살아납니다 — “어디”를 머리로 번역할 필요가 없습니다.</p>
 
   <div class="stage">
     <div class="pano" id="pano">
@@ -115,7 +115,7 @@
       <!-- 핀은 JS로 -->
     </div>
     <div class="stagebar">
-      <span class="hint">👆 파노라마 위 <b>색깔 핀</b>을 누르면 — 아래 구내사진 중 그 부위가 <b>환하게</b> 켜집니다.</span>
+      <span class="hint">👆 파노라마 위 <b>색이 있는 치식 번호</b>(치료한 치아)를 누르면 — 아래 구내사진 중 그 부위가 <b>환하게</b> 켜집니다.</span>
       <div class="pinbtns" id="pinbtns"></div>
     </div>
   </div>
@@ -124,11 +124,11 @@
 
   <h2>같은 부위 구내 사진</h2>
   <div class="gallery" id="gallery"></div>
-  <p class="galnote">📌 핀과 사진의 연결은 <b>표준 촬영 구도 기준의 기본 매핑</b>입니다. 실제 촬영본에 맞춰 원장이 손쉽게 바로잡을 수 있도록 데이터로 분리해 두었습니다. 핀 좌표도 표준 치열 모델 기준 근사값이라 실제 파노라마에 맞춰 미세조정 가능합니다.</p>
+  <p class="galnote">📌 치식 번호의 좌표와 사진 연결은 <b>표준 치열·촬영 구도 기준의 근사 배치</b>입니다(데이터로 분리해 둠). 실제 환자 파노라마·촬영본에 맞춰 좌표 한 줄만 고치면 바로 정렬됩니다.</p>
 
   <div class="why">
     <div class="wbox bad"><div class="lbl">❌ 글자로만</div>‘#26 #17 #46 치료함’ — 어느 자리인지 떠올리느라 시선이 멈춘다. 환자에게 설명할 때도 머릿속에서 한 번 더 번역한다.</div>
-    <div class="wbox good"><div class="lbl">✅ 공간지도</div>핀이 입속 그 자리에 있다. 보면 바로 “거기”. 위치를 위치로 보여주면 번역 단계가 사라진다(내부 원칙 INV-7).</div>
+    <div class="wbox good"><div class="lbl">✅ 공간지도</div>치식 번호가 입속 그 자리에 놓여 있고, 치료한 치아만 색으로 뜬다. 보면 바로 “거기”. 위치를 위치로 보여주면 번역 단계가 사라진다(내부 원칙 INV-7).</div>
   </div>
 
   <div class="callout note">
@@ -157,56 +157,62 @@ const PHOTOS = [
   {f:'p_lingual_3.jpg',  label:'하악 설면'},
   {f:'p_lingual_1.jpg',  label:'#30번대 · 하악 좌측 교합'}
 ];
-/* ===== 핀(치료) — 좌표 %는 표준 치열 모델 근사. matchRegions=환하게 켤 사진 부위 ===== */
-const PINS = [
-  { id:'t17', tooth:'오른쪽 위 맨 끝 어금니(#17)', x:16, y:33, color:'#ea580c',
-    txLabel:'근관치료', detail:'시림 검사에서 비가역적 치수염 확인 → 발수·근관확대 진행',
-    matchPhotos:['p_occlusal_1.jpg','p_buccal_2.jpg'] },
-  { id:'t15', tooth:'오른쪽 위 작은어금니(#15)', x:30, y:30, color:'#b45309',
-    txLabel:'검사', detail:'우측 시림 호소로 검사 대상에 포함(Air/Bite 검사)',
-    matchPhotos:['p_occlusal_1.jpg','p_buccal_2.jpg'] },
-  { id:'t26', tooth:'왼쪽 위 큰어금니(#26)', x:80, y:33, color:'#2563eb',
-    txLabel:'근관치료 → 크라운', detail:'“우측이 시려요” 호소 → Caviton 봉함, 크라운 1주 후 예정',
-    matchPhotos:['p_occlusal_3.jpg','p_buccal_3.jpg'] },
-  { id:'t46', tooth:'오른쪽 아래 큰어금니(#46)', x:20, y:67, color:'#16a34a',
-    txLabel:'마모 수복', detail:'치아 마모 — 충전물 연마',
-    matchPhotos:['p_occlusal_2.jpg','p_buccal_2.jpg'] }
-];
+/* ===== 치료한 치아만 색/정보 (나머지는 회색 번호 버튼) ===== */
+const TREAT = {
+  17:{ tooth:'오른쪽 위 맨 끝 어금니', txLabel:'근관치료', color:'#ea580c',
+       detail:'시림 검사에서 비가역적 치수염 확인 → 발수·근관확대 진행', match:['p_occlusal_1.jpg','p_buccal_2.jpg'] },
+  15:{ tooth:'오른쪽 위 작은어금니', txLabel:'검사', color:'#b45309',
+       detail:'우측 시림 호소로 검사 대상에 포함(Air/Bite 검사)', match:['p_occlusal_1.jpg','p_buccal_2.jpg'] },
+  26:{ tooth:'왼쪽 위 큰어금니', txLabel:'근관치료 → 크라운', color:'#2563eb',
+       detail:'“우측이 시려요” 호소 → Caviton 봉함, 크라운 1주 후 예정', match:['p_occlusal_3.jpg','p_buccal_3.jpg'] },
+  46:{ tooth:'오른쪽 아래 큰어금니', txLabel:'마모 수복', color:'#16a34a',
+       detail:'치아 마모 — 충전물 연마', match:['p_occlusal_2.jpg','p_buccal_2.jpg'] }
+};
+
+/* ===== 치식 좌표 (좌→우 = 환자 오른쪽→왼쪽). 표준 치열 근사, 한 줄만 고치면 정렬 ===== */
+const UPPER=[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+const LOWER=[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+function layout(arr, yBase, amp){
+  return arr.map((t,i)=>{ const frac=i/(arr.length-1);
+    return { t, x:7+frac*86, y:yBase + amp*Math.sin(Math.PI*frac) }; });
+}
+const TEETH=[...layout(UPPER,17,5), ...layout(LOWER,85,-5)];  // 상악:중앙이 더 아래 / 하악:중앙이 더 위
 
 const pano = document.getElementById('pano');
-PINS.forEach(p=>{
-  const el = document.createElement('div'); el.className='pin'; el.dataset.id=p.id;
-  el.style.left=p.x+'%'; el.style.top=p.y+'%';
-  el.innerHTML = `<span class="halo"></span><span class="dot" style="background:${p.color}"></span><span class="tag">${p.txLabel}</span>`;
-  el.onclick = ()=>select(p.id);
+TEETH.forEach(({t,x,y})=>{
+  const tr = TREAT[t];
+  const el = document.createElement('div');
+  el.className = 'tbtn' + (tr?' tx':''); el.dataset.tooth=t; el.textContent=t;
+  el.style.left=x+'%'; el.style.top=y+'%';
+  if(tr){ el.style.background=tr.color; el.title=`#${t} · ${tr.txLabel}`; el.onclick=()=>select(t); }
   pano.appendChild(el);
 });
-document.getElementById('pinbtns').innerHTML = PINS.map(p=>
-  `<button class="pinbtn" data-id="${p.id}" onclick="select('${p.id}')"><span class="sw" style="background:${p.color}"></span>${p.txLabel}</button>`).join('');
+document.getElementById('pinbtns').innerHTML = Object.keys(TREAT).map(t=>{ const tr=TREAT[t];
+  return `<button class="pinbtn" data-tooth="${t}" onclick="select(${t})"><span class="sw" style="background:${tr.color}"></span>${tr.txLabel} <b style="opacity:.7">#${t}</b></button>`; }).join('');
 
 const gallery = document.getElementById('gallery');
 gallery.innerHTML = PHOTOS.map(ph=>
   `<div class="photo" data-f="${ph.f}" onclick="zoom('${ph.f}')"><img src="../img/${ph.f}" alt="${ph.label}" loading="lazy"/><span class="plab">${ph.label}</span></div>`).join('');
 
 let cur=null;
-function select(id){
-  const p = PINS.find(x=>x.id===id);
-  if(cur===id){ clearSel(); return; }
-  cur=id;
-  document.querySelectorAll('.pin').forEach(e=>e.classList.toggle('active', e.dataset.id===id));
-  document.querySelectorAll('.pinbtn').forEach(e=>e.classList.toggle('active', e.dataset.id===id));
+function select(t){
+  t=+t; const tr=TREAT[t];
+  if(cur===t){ clearSel(); return; }
+  cur=t;
+  document.querySelectorAll('.tbtn').forEach(e=>e.classList.toggle('active', +e.dataset.tooth===t));
+  document.querySelectorAll('.pinbtn').forEach(e=>e.classList.toggle('active', +e.dataset.tooth===t));
   document.querySelectorAll('.photo').forEach(e=>{
-    const m = p.matchPhotos.includes(e.dataset.f);
+    const m = tr.match.includes(e.dataset.f);
     e.classList.toggle('match', m); e.classList.toggle('dim', !m);
   });
   const si=document.getElementById('selinfo'); si.classList.add('on');
-  si.innerHTML = `<div class="st"><span class="chip" style="background:${p.color}">${p.txLabel}</span> ${p.tooth}</div>
-    <div class="sd">${p.detail}<br><span class="where">📷 아래에서 ‘${p.matchPhotos.map(f=>PHOTOS.find(x=>x.f===f).label).join(' · ')}’ 사진이 켜졌습니다.</span></div>`;
+  si.innerHTML = `<div class="st"><span class="chip" style="background:${tr.color}">${tr.txLabel}</span> #${t} · ${tr.tooth}</div>
+    <div class="sd">${tr.detail}<br><span class="where">📷 아래에서 ‘${tr.match.map(f=>PHOTOS.find(x=>x.f===f).label).join(' · ')}’ 사진이 켜졌습니다.</span></div>`;
   document.querySelector('.match')?.scrollIntoView({behavior:'smooth',block:'center'});
 }
 function clearSel(){
   cur=null;
-  document.querySelectorAll('.pin,.pinbtn').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.tbtn,.pinbtn').forEach(e=>e.classList.remove('active'));
   document.querySelectorAll('.photo').forEach(e=>e.classList.remove('match','dim'));
   document.getElementById('selinfo').classList.remove('on');
 }
