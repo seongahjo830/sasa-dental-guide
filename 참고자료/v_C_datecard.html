@@ -1,0 +1,118 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C · 날짜카드 스택</title>
+<style>
+  :root{ --ink:#1e293b; --mut:#64748b; --line:#e6eaf0; --bg:#f8fafc; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Pretendard,system-ui,'Malgun Gothic',sans-serif;color:var(--ink);background:#f6f8fb}
+  .top{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line)}
+  h1{margin:0;padding:14px 16px 4px;font-size:16px}
+  .sub{padding:0 16px 10px;color:var(--mut);font-size:12.5px;line-height:1.5}
+  .teethbar{display:flex;gap:6px;align-items:center;padding:9px 16px;border-top:1px solid var(--line);flex-wrap:wrap;background:#fcfdfe}
+  .tlabel{font-size:12px;font-weight:700;color:var(--mut)}
+  .tchip{font-size:12px;font-weight:800;border:1.5px solid var(--line);border-radius:20px;padding:3px 11px;cursor:pointer;background:#fff}
+  .journey{font-size:12px;color:#334155;padding:8px 16px;background:#fff7ed;border-top:1px solid #fed7aa;display:none;line-height:1.6}
+  .journey.show{display:block} .journey b{color:#9a3412}
+  .wrap{padding:14px 12px 80px;max-width:680px;margin:0 auto;position:relative}
+  /* 날짜 카드 */
+  .daycard{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden;position:relative}
+  .dhead{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--line)}
+  .dhead:hover{background:#fafcff}
+  .dd{font-weight:900;font-size:16px;width:58px;flex:none}.dd small{display:block;font-size:10px;color:var(--mut);font-weight:600}
+  /* 타입 미니 스트립(가로) */
+  .strip{flex:1;display:flex;gap:4px;flex-wrap:wrap}
+  .sdot{font-size:10px;font-weight:800;color:#fff;border-radius:20px;padding:2px 8px;display:flex;align-items:center;gap:3px}
+  .cnt{font-size:11px;color:var(--mut);white-space:nowrap}.chev{color:var(--mut);transition:transform .2s}
+  .daycard.open .chev{transform:rotate(90deg)}
+  .body{display:none}.daycard.open .body{display:block}
+  .item{display:flex;gap:9px;padding:9px 14px;border-bottom:1px solid #f1f5f9}
+  .item:last-child{border-bottom:0}
+  .chip{font-size:10px;font-weight:700;color:#fff;border-radius:20px;padding:2px 7px;white-space:nowrap;height:fit-content;margin-top:2px}
+  .it{font-size:13px;line-height:1.4} .teeth{font-weight:800}
+  .code{font-size:11px;color:#dc2626;margin-top:2px}
+  .det{font-size:11.5px;color:var(--mut);margin-top:3px;line-height:1.55;display:none}
+  .item.open .det{display:block}
+  .doc{font-size:10.5px;color:#94a3b8;margin-top:3px}
+  .item.dim{opacity:.22} .item.hl{background:#fffbeb}
+  .ordno{display:inline-block;background:#f59e0b;color:#fff;font-weight:800;border-radius:50%;width:16px;height:16px;line-height:16px;text-align:center;font-size:10px;margin-right:4px}
+  .gapband{text-align:center;font-size:11px;color:#b45309;margin:-6px 0 8px}
+  .gapband span{background:#fff7ed;border:1px dashed #fed7aa;border-radius:20px;padding:2px 10px}
+  /* 줌 */
+  body.z1 .body{display:none!important} body.z1 .daycard .strip{display:flex}
+  body.z3 .item .det{display:block} body.z3 .body{display:block!important}
+  .zoombox{position:fixed;bottom:0;left:0;right:0;z-index:9;background:#0f172a;color:#fff;padding:9px 16px;display:flex;align-items:center;gap:10px;font-size:12px}
+  .zoombox label{font-weight:700;white-space:nowrap}.zoombox input{flex:1;accent-color:#38bdf8}
+  .zoombox .mode{background:#1e293b;border-radius:20px;padding:2px 10px;white-space:nowrap;font-weight:700;color:#7dd3fc}
+</style></head><body>
+<div class="top">
+  <h1>C · 날짜카드 스택 — 카드(세로) 안에 타입 스트립(가로)</h1>
+  <div class="sub">내원일이 카드로 세로로 쌓임. 카드 머리에 그날 타입 미니스트립(가로 스윔레인 압축). <b>치아칩을 누르면</b> 그 치아가 등장한 카드들을 가로질러 ①②③ 여정으로 추적(V-Model).</div>
+  <div class="teethbar" id="teethbar"><span class="tlabel">🦷 치아 추적:</span></div>
+  <div class="journey" id="journey"></div>
+</div>
+<div class="wrap" id="wrap"></div>
+<div class="zoombox">
+  <label>🔍 슬라이더 줌</label>
+  <input type="range" id="zoom" min="1" max="3" value="2" step="1">
+  <span class="mode" id="zmode">카드 보기</span>
+</div>
+<script src="_data.js"></script><script src="_compat.js"></script>
+<script>
+const wrap=document.getElementById('wrap');
+const dates=uniqueDates().reverse();
+dates.forEach((d,i)=>{
+  const evs=EVENTS.filter(e=>e.date===d);
+  const types=[...new Set(evs.map(e=>e.type))];
+  const strip=types.map(t=>{const v=PALETTE[t];const n=evs.filter(e=>e.type===t).length;
+    return `<span class="sdot" style="background:${v.c}">${v.icon}${v.short}${n>1?' ×'+n:''}</span>`;}).join('');
+  const items=evs.map(e=>{ const v=PALETTE[e.type];
+    const teeth=(e.teeth&&e.teeth.length)?` <span class="teeth" style="color:${v.c}">${e.teeth.map(t=>'#'+t).join(' ')}</span>`:'';
+    const det=(e.code?`<div class="code">${e.code}</div>`:'')+((e.details||[]).join('<br>'));
+    return `<div class="item" data-id="${e.id}" data-teeth="${(e.teeth||[]).join(',')}" onclick="this.classList.toggle('open')">
+       <span class="chip" style="background:${v.c}">${v.label}</span>
+       <div style="flex:1"><div class="it">${e.title}${teeth}</div>${det?`<div class="det">${det}</div>`:''}<div class="doc">👤 ${e.doctor}</div></div></div>`;
+  }).join('');
+  const older=dates[i+1];
+  wrap.insertAdjacentHTML('beforeend',
+    `<div class="daycard${i===0?' open':''}">
+       <div class="dhead" onclick="this.parentNode.classList.toggle('open')">
+         <div class="dd">${fmtDate(d)}<small>'${fmtYear(d)}</small></div>
+         <div class="strip">${strip}</div>
+         <span class="cnt">${evs.length}건</span><span class="chev">▶</span>
+       </div>
+       <div class="body">${items}</div>
+     </div>`+
+    (older?`<div class="gapband"><span>↕ ${gapLabel(older,d)} 경과</span></div>`:''));
+});
+// 치아 추적
+let activeTooth=null;
+const tb=document.getElementById('teethbar'), journey=document.getElementById('journey');
+allTeeth().forEach(t=>{ const th=threadOf(t); const col=th?th.color:'#64748b';
+  const b=document.createElement('span'); b.className='tchip'; b.dataset.col=col; b.textContent='#'+t;
+  b.onclick=()=>toggleTooth(t,b); tb.appendChild(b); });
+function toggleTooth(t,b){
+  if(activeTooth===t){ activeTooth=null;
+    document.querySelectorAll('.tchip').forEach(c=>{c.style.background='#fff';c.style.color='';c.style.borderColor='var(--line)';});
+    document.querySelectorAll('.item').forEach(e=>{e.classList.remove('dim','hl');e.querySelectorAll('.ordno').forEach(o=>o.remove());});
+    journey.classList.remove('show'); return; }
+  activeTooth=t;
+  document.querySelectorAll('.tchip').forEach(c=>{const on=c===b;c.style.background=on?c.dataset.col:'#fff';c.style.color=on?'#fff':'';c.style.borderColor=on?c.dataset.col:'var(--line)';});
+  const th=threadOf(t); const order=th?th.steps.map(s=>s.id):[];
+  // 관련 카드는 자동 펼침
+  document.querySelectorAll('.item').forEach(e=>{
+    const has=(e.dataset.teeth||'').split(',').includes(String(t));
+    e.classList.toggle('dim',!has); e.classList.toggle('hl',has);
+    e.querySelectorAll('.ordno').forEach(o=>o.remove());
+    if(has){ e.closest('.daycard').classList.add('open');
+      const idx=order.indexOf(e.dataset.id); if(idx>=0){const s=document.createElement('span');s.className='ordno';s.textContent=idx+1;e.querySelector('.it').prepend(s);} }
+  });
+  if(th){ const line=th.steps.map((s,i)=>{const e=byId(s.id);return `<b>${i+1}.${s.stage}</b> ${PALETTE[e.type].label}·${fmtDate(e.date)}`;}).join(' &nbsp;➜&nbsp; ');
+    journey.innerHTML=`🦷 <b>#${t}</b> 여정 — ${th.label}<br>${line}`; }
+  else journey.innerHTML=`🦷 <b>#${t}</b> — 단일 기록`;
+  journey.classList.add('show');
+}
+const zoom=document.getElementById('zoom'), zmode=document.getElementById('zmode');
+function applyZoom(){const z=+zoom.value;document.body.className='';document.body.classList.add('z'+z);
+  zmode.textContent= z===1?'스트립만(개요)': z===2?'카드 보기':'상세 펼침';}
+zoom.addEventListener('input',applyZoom); applyZoom();
+</script>{G}<script>/*DATA-GUARD*/(function(){var ok=(typeof THREADS!=="undefined")||(typeof EVENTS!=="undefined");if(!ok){var b=document.createElement("div");b.style.cssText="position:fixed;left:0;right:0;top:0;z-index:99999;background:#fff3cd;color:#7a5b00;border-bottom:1px solid #ffe08a;padding:10px 16px;font:600 13px/1.5 -apple-system,Pretendard,sans-serif;text-align:center";b.textContent="⏳ 이 시안의 데이터 파일(_data.js)이 아직 연동되지 않아 내용이 비어 있습니다. 데이터 연결 후 정상 표시됩니다.";document.body.appendChild(b);}})();</script></body></html>

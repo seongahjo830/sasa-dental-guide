@@ -1,0 +1,143 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>안1 · 인과 스윔레인 타임라인</title>
+<style>
+:root{--bg:#FBFAF7;--card:#fff;--ink:#211E19;--mut:#6B6760;--faint:#9a958c;--line:#E7E3DC;--accent:#1D4ED8;
+ font-family:'Pretendard Variable',Pretendard,-apple-system,'Malgun Gothic',sans-serif;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:14px;}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 18px 60px;}
+h1{font-size:19px;margin:0 0 2px;letter-spacing:-.02em;}
+.sub{font-size:12.5px;color:var(--mut);margin:0 0 12px;line-height:1.5;}
+.sub b{color:var(--ink);}
+.legend{display:flex;flex-wrap:wrap;gap:5px 12px;margin:0 0 12px;}
+.legend span{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--mut);}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.chart{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 0 10px;overflow-x:auto;}
+.inner{min-width:1080px;position:relative;}
+/* 시간축 헤더 */
+.head{display:flex;align-items:flex-end;height:34px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--card);z-index:8;}
+.gutter{width:188px;flex:0 0 188px;border-right:1px solid var(--line);}
+.track{position:relative;flex:1;height:100%;}
+.yr{position:absolute;bottom:3px;font-size:12px;font-weight:800;color:#c3bdb1;transform:translateX(4px);}
+.mtick{position:absolute;top:0;bottom:0;width:1px;background:#F4F1EB;}
+.mtick.q{background:#ECE8E0;}
+.today{position:absolute;top:0;bottom:0;width:2px;background:#EF4444;z-index:7;}
+.today::after{content:'오늘';position:absolute;top:1px;left:3px;font-size:9px;font-weight:800;color:#EF4444;}
+/* 스윔레인 */
+.lane{display:flex;border-bottom:1px solid #F0ECE4;}
+.lane:last-child{border-bottom:none;}
+.lane:hover{background:#FCFBF8;}
+.lane .lab{flex:0 0 188px;width:188px;border-right:1px solid var(--line);padding:9px 12px;display:flex;flex-direction:column;justify-content:center;gap:2px;}
+.lab .tag{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:800;letter-spacing:-.02em;}
+.lab .dot{width:10px;height:10px;border-radius:50%;flex:none;}
+.lab .meta{font-size:10.5px;color:var(--faint);font-weight:600;}
+.lane .lt{position:relative;flex:1;height:54px;}
+/* 인과 연결선(레인 내부) */
+.conn{position:absolute;height:2px;top:26px;background:repeating-linear-gradient(90deg,#cbd5e1 0 5px,transparent 5px 9px);z-index:1;}
+.conn::after{content:'';position:absolute;right:-1px;top:-3px;border-left:6px solid #94a3b8;border-top:4px solid transparent;border-bottom:4px solid transparent;}
+/* 치료 기간 막대 */
+.bar{position:absolute;height:20px;top:17px;border-radius:6px;display:flex;align-items:center;padding:0 7px;color:#fff;font-size:10px;font-weight:800;white-space:nowrap;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.18);z-index:3;cursor:pointer;}
+.bar.prog{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.25) 0 5px,transparent 5px 10px);}
+.bar.plan{opacity:.55;border:1px dashed rgba(255,255,255,.7);}
+.bar .out{position:absolute;left:calc(100% + 5px);color:var(--ink);font-weight:700;font-size:9.5px;white-space:nowrap;}
+/* 점 사건(호소/검사/진단/경과) */
+.node{position:absolute;top:18px;width:18px;height:18px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:900;z-index:4;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.25);transform:translateX(-9px);}
+.node.dia{border-radius:4px;transform:translateX(-9px) rotate(45deg);}
+.node.dia span{transform:rotate(-45deg);}
+/* 팝오버 */
+#pop{position:fixed;z-index:50;max-width:300px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(15,23,42,.22);padding:13px 15px;font-size:12.5px;display:none;}
+#pop .pt{font-weight:800;font-size:13px;margin-bottom:3px;}
+#pop .pc{color:#dc2626;font-weight:800;font-size:11px;}
+#pop .pm{color:var(--mut);font-size:11.5px;margin-top:5px;line-height:1.55;}
+#pop .pst{display:inline-block;font-size:10px;font-weight:800;color:#fff;border-radius:20px;padding:1px 8px;margin-bottom:6px;}
+.foot{font-size:11px;color:var(--faint);margin-top:12px;line-height:1.6;}
+.note{margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 16px;font-size:12.5px;color:#475569;line-height:1.7;}
+.note b{color:var(--ink);}
+</style></head><body>
+<div class="wrap">
+<h1>🦷 안1 · 인과 스윔레인 타임라인</h1>
+<p class="sub"><b>문제(치아)마다 한 줄.</b> 그 줄 안에서 <b>호소 → 검사 → 진단 → 치료 → 다음</b>이 <b>실제 날짜 위치</b>에 놓이고 화살표로 이어집니다. 가로 위치 = 언제 / 막대 길이 = 기간 / 화살표 = 왜. 사건을 누르면 상세가 뜹니다.</p>
+<div class="legend" id="legend"></div>
+<div class="chart"><div class="inner">
+  <div class="head"><div class="gutter"></div><div class="track" id="htrack"></div></div>
+  <div id="lanes"></div>
+</div></div>
+<div class="note"><b>이 구조의 강점</b> — "왜 했나"(인과)와 "언제·얼마나"(시간·기간)를 <b>한 화면 한 줄</b>에서 동시에. 04.30에 여러 건이 몰려도 문제별로 갈라져 안 섞임. <b>약점</b> — 같은 날 점사건이 겹치면 좁아짐(여기선 살짝 분산 처리).</div>
+<p class="foot">🧪 데모(가상 환자) · ●=점 사건(호소·검사·경과) ◆=진단 · 막대=치료 기간 · 빗금=진행중 · 점선=예정</p>
+</div>
+<div id="pop"></div>
+<script src="_data.js"></script><script src="_compat.js"></script>
+<script>
+// 범례
+document.getElementById('legend').innerHTML =
+  Object.keys(CAT).map(function(k){return '<span><i style="background:'+CAT[k][1]+'"></i>'+CAT[k][0]+'</span>';}).join('');
+
+// 시간축 헤더
+var ht=document.getElementById('htrack'),hh='';
+for(var d=new Date(_MIN); d<_MAX; d.setMonth(d.getMonth()+1)){
+  var iso=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-01';
+  hh+='<div class="mtick'+(d.getMonth()%3===0?' q':'')+'" style="left:'+xp(iso)+'%"></div>';
+  if(d.getMonth()===0) hh+='<div class="yr" style="left:'+xp(iso)+'%">'+d.getFullYear()+'</div>';
+}
+hh+='<div class="today" style="left:'+xp(TODAY)+'%"></div>';
+ht.innerHTML=hh;
+
+// 같은 레인 안에서 같은 날짜 점사건이 겹치면 살짝 좌우 분산
+function spread(items){
+  var seen={};
+  items.forEach(function(e){
+    if(e.point){ seen[e.s]=(seen[e.s]||0); e._dx=seen[e.s]; seen[e.s]++; }
+  });
+}
+
+var lanesEl=document.getElementById('lanes'),html='';
+THREADS.forEach(function(th){
+  var evs=th.steps.map(byId);
+  spread(evs);
+  var body='';
+  // 인과 연결선: 첫 사건 시작 ~ 마지막 사건 시작
+  if(evs.length>1){
+    var x0=xp(evs[0].s), x1=xp(evs[evs.length-1].s);
+    body+='<div class="conn" style="left:'+x0+'%;width:'+Math.max(x1-x0,0.5)+'%"></div>';
+  }
+  evs.forEach(function(e){
+    var col=CAT[e.cat][1];
+    if(e.point){
+      var dia=(e.stage==='dx');
+      var glyph=e.stage==='cc'?'!':e.stage==='exam'?'?':e.stage==='dx'?'Dx':e.stage==='plan'?'P':'✓';
+      var off=(e._dx||0)*19;
+      body+='<div class="node '+(dia?'dia':'')+'" style="left:'+xp(e.s)+'%;margin-left:'+off+'px;background:'+col+'" data-id="'+e.id+'"><span>'+glyph+'</span></div>';
+    }else{
+      var L=xp(e.s), W=Math.max(xp(e.e)-xp(e.s),0.8), wide=W>7;
+      body+='<div class="bar '+e.st+'" style="left:'+L+'%;width:'+W+'%;background:'+col+'" data-id="'+e.id+'">'
+        +(wide?e.title:'')+(wide?'':'<span class="out">'+e.title+'</span>')+'</div>';
+    }
+  });
+  var meta = (th.tooth?('#'+th.tooth+' · '):'') + evs.length+'단계';
+  html+='<div class="lane"><div class="lab"><span class="tag"><span class="dot" style="background:'+th.color+'"></span>'+th.label+'</span><span class="meta">'+meta+'</span></div><div class="lt">'+body+'</div></div>';
+});
+lanesEl.innerHTML=html;
+
+// 팝오버
+var pop=document.getElementById('pop');
+function showPop(el,e){
+  var stc=CAT[e.cat][1];
+  var stTxt=e.st==='prog'?'진행중':e.st==='plan'?'예정':'완료';
+  pop.innerHTML='<span class="pst" style="background:'+stc+'">'+CAT[e.cat][0]+' · '+stTxt+'</span>'
+    +'<div class="pt">'+e.title+'</div>'
+    +(e.code?'<div class="pc">'+e.code+'</div>':'')
+    +'<div class="pm">📅 '+fmtD(e.s)+(e.point?'':' → '+fmtD(e.e))+(e.doctor?'　👤 '+e.doctor:'')+'</div>'
+    +(e.det.length?'<div class="pm">'+e.det.join('<br>')+'</div>':'');
+  pop.style.display='block';
+  var r=el.getBoundingClientRect();
+  var x=Math.min(r.left, window.innerWidth-320), y=r.bottom+8;
+  if(y+pop.offsetHeight>window.innerHeight) y=r.top-pop.offsetHeight-8;
+  pop.style.left=Math.max(8,x)+'px'; pop.style.top=y+'px';
+}
+document.querySelectorAll('[data-id]').forEach(function(el){
+  el.addEventListener('click',function(ev){ev.stopPropagation();showPop(el,byId(el.dataset.id));});
+});
+document.addEventListener('click',function(){pop.style.display='none';});
+</script>
+{G}<script>/*DATA-GUARD*/(function(){var ok=(typeof THREADS!=="undefined")||(typeof EVENTS!=="undefined");if(!ok){var b=document.createElement("div");b.style.cssText="position:fixed;left:0;right:0;top:0;z-index:99999;background:#fff3cd;color:#7a5b00;border-bottom:1px solid #ffe08a;padding:10px 16px;font:600 13px/1.5 -apple-system,Pretendard,sans-serif;text-align:center";b.textContent="⏳ 이 시안의 데이터 파일(_data.js)이 아직 연동되지 않아 내용이 비어 있습니다. 데이터 연결 후 정상 표시됩니다.";document.body.appendChild(b);}})();</script></body></html>

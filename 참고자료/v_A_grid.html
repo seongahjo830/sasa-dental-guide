@@ -1,0 +1,127 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A · 그리드형 — 시간(세로) × 타입(가로)</title>
+<style>
+  :root{ --ink:#1e293b; --mut:#64748b; --line:#e6eaf0; --bg:#f8fafc; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Pretendard,system-ui,'Malgun Gothic',sans-serif;color:var(--ink);background:#fff}
+  .top{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line)}
+  h1{margin:0;padding:14px 16px 4px;font-size:16px}
+  .sub{padding:0 16px 10px;color:var(--mut);font-size:12.5px;line-height:1.5}
+  /* 치아 추적 바 */
+  .teethbar{display:flex;gap:6px;align-items:center;padding:9px 16px;border-top:1px solid var(--line);flex-wrap:wrap;background:#fcfdfe}
+  .tlabel{font-size:12px;font-weight:700;color:var(--mut)}
+  .tchip{font-size:12px;font-weight:800;border:1.5px solid var(--line);border-radius:20px;padding:3px 11px;cursor:pointer;background:#fff}
+  .tchip.on{color:#fff}
+  .journey{font-size:12px;color:#334155;padding:8px 16px;background:#fff7ed;border-top:1px solid #fed7aa;display:none;line-height:1.6}
+  .journey.show{display:block}
+  .journey b{color:#9a3412}
+  /* 컬럼 헤더 */
+  .colhead{display:grid;border-top:1px solid var(--line);background:#fff}
+  .colhead .h{padding:7px 4px;text-align:center;font-size:11px;font-weight:800;border-left:1px solid var(--line);color:#fff}
+  .colhead .h:first-child{background:#f1f5f9!important;color:var(--mut);border-left:0}
+  /* 그리드 본문 */
+  .grid{}
+  .drow{display:grid;border-bottom:1px solid var(--line);min-height:46px}
+  .drow:hover{background:#fafcff}
+  .dcell{padding:4px 3px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
+  .datecell{border-left:0;justify-content:center;align-items:center;background:#fafbfc}
+  .dd{font-weight:800;font-size:13px} .yy{font-size:10px;color:var(--mut)}
+  .gap{font-size:9.5px;color:#b45309;background:#fff7ed;border:1px dashed #fed7aa;border-radius:10px;padding:0 5px;margin-top:2px;white-space:nowrap}
+  .ev{border-radius:7px;padding:4px 6px;font-size:11px;line-height:1.3;cursor:pointer;color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  .ev .t{font-weight:800}
+  .ev.dim{opacity:.18}
+  .ev.hl{outline:3px solid #f59e0b;outline-offset:1px}
+  .ordno{display:inline-block;background:#f59e0b;color:#fff;font-weight:800;border-radius:50%;width:15px;height:15px;line-height:15px;text-align:center;font-size:9px;margin-right:3px}
+  .det{display:none;font-size:11px;color:#334155;background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 9px;margin:2px 6px 8px;line-height:1.55}
+  .det.show{display:block}
+  .det .dt{font-weight:700} .det .code{color:#dc2626}
+  /* 슬라이더 줌 — 별도 덤 기능 */
+  .zoombox{position:sticky;bottom:0;z-index:9;background:#0f172a;color:#fff;padding:9px 16px;display:flex;align-items:center;gap:10px;font-size:12px}
+  .zoombox label{font-weight:700;white-space:nowrap}
+  .zoombox input{flex:1;accent-color:#38bdf8}
+  .zoombox .mode{background:#1e293b;border-radius:20px;padding:2px 10px;white-space:nowrap;font-weight:700;color:#7dd3fc}
+  /* 줌 레벨: 1=점, 2=칩, 3=상세 */
+  body.z1 .ev{font-size:0;padding:0;height:12px;border-radius:6px}
+  body.z1 .ev .t{font-size:0}
+  body.z1 .ev .ordno{width:12px;height:12px;line-height:12px;margin:0}
+  body.z3 .det.has{display:block}
+  .tag{font-size:9px;font-weight:700;opacity:.85}
+</style></head><body>
+<div class="top">
+  <h1>A · 그리드형 — 세로=시간, 가로=타입 (스윔레인 전치)</h1>
+  <div class="sub">행=내원일(아래로 과거), 열=진료 타입. 같은 타입이 같은 세로열에 정렬돼 "처방만/검사만" 훑기 쉬움. <b>치아칩을 누르면</b> 그 치아 셀이 강조되고 ①②③ 순서로 "언제·왜"가 보임(V-Model).</div>
+  <div class="teethbar" id="teethbar"><span class="tlabel">🦷 치아 추적:</span></div>
+  <div class="journey" id="journey"></div>
+  <div class="colhead" id="colhead"></div>
+</div>
+<div class="grid" id="grid"></div>
+<div class="zoombox">
+  <label>🔍 슬라이더 줌</label>
+  <input type="range" id="zoom" min="1" max="3" value="2" step="1">
+  <span class="mode" id="zmode">칩 보기</span>
+</div>
+<script src="_data.js"></script><script src="_compat.js"></script>
+<script>
+const COLS=COLGROUPS, dates=uniqueDates().reverse(); // 최신 위
+const tmpl=`64px repeat(${COLS.length}, 1fr)`;
+// 컬럼 헤더
+const ch=document.getElementById('colhead'); ch.style.gridTemplateColumns=tmpl;
+ch.innerHTML=`<div class="h">날짜</div>`+COLS.map(c=>`<div class="h" style="background:${c.c}">${c.label}</div>`).join('');
+// 치아 추적 칩
+let activeTooth=null;
+const tb=document.getElementById('teethbar');
+allTeeth().forEach(t=>{ const th=threadOf(t); const col=th?th.color:'#64748b';
+  const b=document.createElement('span'); b.className='tchip'; b.dataset.col=col; b.textContent='#'+t;
+  b.onclick=()=>toggleTooth(t,b); tb.appendChild(b); });
+// 그리드 본문
+const grid=document.getElementById('grid');
+dates.forEach((d,i)=>{
+  const row=document.createElement('div'); row.className='drow'; row.style.gridTemplateColumns=tmpl;
+  // 날짜셀 + 경과
+  const nextOlder=dates[i+1];
+  const gap= nextOlder? `<div class="gap">↕ ${gapLabel(nextOlder,d)}</div>`:'';
+  let html=`<div class="dcell datecell"><div class="dd">${fmtDate(d)}</div><div class="yy">'${fmtYear(d)}</div>${gap}</div>`;
+  COLS.forEach(c=>{
+    const evs=EVENTS.filter(e=>e.date===d && c.types.includes(e.type));
+    html+=`<div class="dcell">`+evs.map(e=>cellEv(e)).join('')+`</div>`;
+  });
+  row.innerHTML=html; grid.appendChild(row);
+});
+function cellEv(e){
+  const v=PALETTE[e.type];
+  const teeth=(e.teeth&&e.teeth.length)?` <span class="t">${e.teeth.map(t=>'#'+t).join(' ')}</span>`:'';
+  const det=(e.code?`<div class="code">${e.code}</div>`:'')+((e.details||[]).join('<br>'))+`<div class="dt">👤 ${e.doctor}</div>`;
+  return `<div class="ev" data-id="${e.id}" data-teeth="${(e.teeth||[]).join(',')}" style="background:${v.c}" onclick="openDet('${e.id}',this)">`+
+    `<span class="tag">${v.icon}</span> ${e.title}${teeth}</div>`+
+    `<div class="det has" data-for="${e.id}">${det}</div>`;
+}
+function openDet(id,el){ const dt=el.parentNode.querySelector(`.det[data-for="${id}"]`); if(dt) dt.classList.toggle('show'); }
+function toggleTooth(t,b){
+  const journey=document.getElementById('journey');
+  if(activeTooth===t){ activeTooth=null; document.querySelectorAll('.tchip').forEach(c=>{c.classList.remove('on');c.style.background='#fff';c.style.color='';c.style.borderColor='var(--line)';});
+    document.querySelectorAll('.ev').forEach(e=>{e.classList.remove('dim','hl'); e.querySelectorAll('.ordno').forEach(o=>o.remove());});
+    journey.classList.remove('show'); return; }
+  activeTooth=t;
+  document.querySelectorAll('.tchip').forEach(c=>{const on=c===b;c.classList.toggle('on',on);
+    c.style.background=on?c.dataset.col:'#fff'; c.style.color=on?'#fff':''; c.style.borderColor=on?c.dataset.col:'var(--line)';});
+  // 순서: THREAD step 순(없으면 날짜순)
+  const th=threadOf(t); const order = th? th.steps.map(s=>s.id) : [];
+  document.querySelectorAll('.ev').forEach(e=>{
+    const has=(e.dataset.teeth||'').split(',').includes(String(t));
+    e.classList.toggle('dim',!has); e.classList.toggle('hl',has);
+    e.querySelectorAll('.ordno').forEach(o=>o.remove());
+    if(has){ const idx=order.indexOf(e.dataset.id); if(idx>=0){ const s=document.createElement('span'); s.className='ordno'; s.textContent=idx+1; e.insertBefore(s,e.firstChild);} }
+  });
+  // 여정 요약
+  if(th){ const line=th.steps.map((s,i)=>{const e=byId(s.id); return `<b>${i+1}.${s.stage}</b> ${PALETTE[e.type].label}·${fmtDate(e.date)}`;}).join(' &nbsp;➜&nbsp; ');
+    journey.innerHTML=`🦷 <b>#${t}</b> 여정 — ${th.label}<br>${line}`; journey.classList.add('show'); }
+  else { journey.innerHTML=`🦷 <b>#${t}</b> — 단일 기록`; journey.classList.add('show'); }
+}
+// 줌
+const zoom=document.getElementById('zoom'), zmode=document.getElementById('zmode');
+function applyZoom(){ const z=+zoom.value; document.body.className=''; document.body.classList.add('z'+z);
+  document.querySelectorAll('.det.has').forEach(d=>{ if(z===3) d.classList.add('show'); else d.classList.remove('show'); });
+  zmode.textContent= z===1?'점 보기(개요)': z===2?'칩 보기':'상세 펼침'; }
+zoom.addEventListener('input',applyZoom); applyZoom();
+</script>{G}<script>/*DATA-GUARD*/(function(){var ok=(typeof THREADS!=="undefined")||(typeof EVENTS!=="undefined");if(!ok){var b=document.createElement("div");b.style.cssText="position:fixed;left:0;right:0;top:0;z-index:99999;background:#fff3cd;color:#7a5b00;border-bottom:1px solid #ffe08a;padding:10px 16px;font:600 13px/1.5 -apple-system,Pretendard,sans-serif;text-align:center";b.textContent="⏳ 이 시안의 데이터 파일(_data.js)이 아직 연동되지 않아 내용이 비어 있습니다. 데이터 연결 후 정상 표시됩니다.";document.body.appendChild(b);}})();</script></body></html>

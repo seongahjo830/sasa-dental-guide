@@ -1,0 +1,103 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>B · 치아중심 V-Model</title>
+<style>
+  :root{ --ink:#1e293b; --mut:#64748b; --line:#e6eaf0; --bg:#f8fafc; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Pretendard,system-ui,'Malgun Gothic',sans-serif;color:var(--ink);background:#f6f8fb}
+  .top{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line)}
+  h1{margin:0;padding:14px 16px 4px;font-size:16px}
+  .sub{padding:0 16px 10px;color:var(--mut);font-size:12.5px;line-height:1.5}
+  .modebar{display:flex;gap:6px;padding:9px 16px;border-top:1px solid var(--line);background:#fcfdfe}
+  .mbtn{font-size:12px;font-weight:700;border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 12px;cursor:pointer}
+  .mbtn.on{background:#0f172a;color:#fff;border-color:#0f172a}
+  .wrap{padding:14px 12px 80px;max-width:680px;margin:0 auto}
+  /* 치아 섹션 */
+  .tooth{background:#fff;border:1px solid var(--line);border-left:5px solid;border-radius:13px;margin-bottom:13px;overflow:hidden}
+  .thead{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none}
+  .tnum{font-size:18px;font-weight:900;width:54px;flex:none}
+  .tdesc{flex:1;font-size:13px;color:#475569;line-height:1.4}
+  .tcount{font-size:11px;color:var(--mut);background:#f1f5f9;border-radius:20px;padding:2px 9px;white-space:nowrap}
+  .chev{transition:transform .2s;color:var(--mut)}
+  .tooth.open .chev{transform:rotate(90deg)}
+  .chain{display:none;padding:4px 14px 14px 14px}
+  .tooth.open .chain{display:block}
+  /* 인과 단계(세로 사슬) */
+  .step{position:relative;padding:0 0 4px 26px}
+  .step::before{content:'';position:absolute;left:8px;top:4px;bottom:-4px;width:2px;background:var(--line)}
+  .step:last-child::before{display:none}
+  .stagedot{position:absolute;left:2px;top:3px;width:14px;height:14px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px var(--line)}
+  .stage{font-size:10.5px;font-weight:800;color:#fff;border-radius:20px;padding:1px 8px;display:inline-block}
+  .arrowdown{font-size:11px;color:#cbd5e1;margin:1px 0 1px 1px}
+  .card{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:5px 0 9px;cursor:pointer}
+  .card:hover{background:#fafcff}
+  .crow{display:flex;align-items:center;gap:7px}
+  .chip{font-size:10px;font-weight:700;color:#fff;border-radius:20px;padding:1px 7px;white-space:nowrap}
+  .date{font-size:11px;color:var(--mut);margin-left:auto;white-space:nowrap}
+  .ctitle{font-size:13px;font-weight:600;margin-top:5px;line-height:1.4}
+  .det{display:none;font-size:11.5px;color:#334155;margin-top:6px;line-height:1.6;border-top:1px dashed var(--line);padding-top:6px}
+  .card.open .det{display:block} .code{color:#dc2626}
+  /* 줌 */
+  body.z1 .ctitle{font-size:0;height:0;margin:0} body.z1 .date{font-size:0}
+  body.z3 .det{display:block}
+  .zoombox{position:fixed;bottom:0;left:0;right:0;z-index:9;background:#0f172a;color:#fff;padding:9px 16px;display:flex;align-items:center;gap:10px;font-size:12px}
+  .zoombox label{font-weight:700;white-space:nowrap} .zoombox input{flex:1;accent-color:#38bdf8}
+  .zoombox .mode{background:#1e293b;border-radius:20px;padding:2px 10px;white-space:nowrap;font-weight:700;color:#7dd3fc}
+</style></head><body>
+<div class="top">
+  <h1>B · 치아중심 V-Model — "이 치아, 언제·왜 치료했나"가 척추</h1>
+  <div class="sub">치아별로 묶고, 각 치아 안에서 <b>증상→검사→진단→처치→예정</b>을 세로 사슬로. "왜 이 진료를 했나"가 한 줄로 읽힘. 좁은 세로 화면에 최적. 타입은 색칩(스윔레인 흔적).</div>
+  <div class="modebar">
+    <button class="mbtn on" data-mode="tooth" onclick="setMode('tooth',this)">🦷 치아별</button>
+    <button class="mbtn" data-mode="plan" onclick="setMode('plan',this)">📋 계획흐름</button>
+  </div>
+</div>
+<div class="wrap" id="wrap"></div>
+<div class="zoombox">
+  <label>🔍 슬라이더 줌</label>
+  <input type="range" id="zoom" min="1" max="3" value="2" step="1">
+  <span class="mode" id="zmode">제목 보기</span>
+</div>
+<script src="_data.js"></script><script src="_compat.js"></script>
+<script>
+const wrap=document.getElementById('wrap');
+function render(mode){
+  wrap.innerHTML='';
+  if(mode==='plan'){ renderThread(PLAN, '📋', PLAN.label, true); return; }
+  THREADS.forEach((th,i)=> renderThread(th, '#'+th.tooth, th.label, i===0));
+}
+function renderThread(th, numLabel, desc, open){
+  const steps=th.steps;
+  let chain='';
+  steps.forEach((s,i)=>{
+    const e=byId(s.id); const v=PALETTE[e.type];
+    const teeth=(e.teeth&&e.teeth.length)?` <span style="font-weight:800;color:${v.c}">${e.teeth.map(t=>'#'+t).join(' ')}</span>`:'';
+    const det=(e.code?`<span class="code">${e.code}</span><br>`:'')+((e.details||[]).join('<br>'))+`<br>👤 ${e.doctor}`;
+    chain+=`<div class="step">
+      <span class="stagedot" style="background:${v.c}"></span>
+      <span class="stage" style="background:${v.c}">${s.stage}</span>
+      ${i<steps.length-1?'<div class="arrowdown">▼</div>':''}
+      <div class="card" onclick="this.classList.toggle('open')">
+        <div class="crow"><span class="chip" style="background:${v.c}">${v.icon} ${v.label}</span><span class="date">${fmtDate(e.date)} '${fmtYear(e.date)}</span></div>
+        <div class="ctitle">${e.title}${teeth}</div>
+        <div class="det">${det}</div>
+      </div></div>`;
+  });
+  wrap.insertAdjacentHTML('beforeend',
+    `<div class="tooth${open?' open':''}" style="border-left-color:${th.color}">
+       <div class="thead" onclick="this.parentNode.classList.toggle('open')">
+         <div class="tnum" style="color:${th.color}">${numLabel}</div>
+         <div class="tdesc">${desc}</div>
+         <span class="tcount">${steps.length}단계</span>
+         <span class="chev">▶</span>
+       </div>
+       <div class="chain">${chain}</div>
+     </div>`);
+}
+function setMode(m,b){ document.querySelectorAll('.mbtn').forEach(x=>x.classList.remove('on')); b.classList.add('on'); render(m); applyZoom(); }
+render('tooth');
+const zoom=document.getElementById('zoom'), zmode=document.getElementById('zmode');
+function applyZoom(){ const z=+zoom.value; document.body.className=''; document.body.classList.add('z'+z);
+  zmode.textContent= z===1?'단계만(개요)': z===2?'제목 보기':'상세 펼침'; }
+zoom.addEventListener('input',applyZoom); applyZoom();
+</script>{G}<script>/*DATA-GUARD*/(function(){var ok=(typeof THREADS!=="undefined")||(typeof EVENTS!=="undefined");if(!ok){var b=document.createElement("div");b.style.cssText="position:fixed;left:0;right:0;top:0;z-index:99999;background:#fff3cd;color:#7a5b00;border-bottom:1px solid #ffe08a;padding:10px 16px;font:600 13px/1.5 -apple-system,Pretendard,sans-serif;text-align:center";b.textContent="⏳ 이 시안의 데이터 파일(_data.js)이 아직 연동되지 않아 내용이 비어 있습니다. 데이터 연결 후 정상 표시됩니다.";document.body.appendChild(b);}})();</script></body></html>

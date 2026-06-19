@@ -1,0 +1,140 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>안B · 확장 행 간트 — 내원 시간축</title><style>
+:root{--bg:#FBFAF7;--card:#fff;--ink:#211E19;--muted:#6B6760;--faint:#9a958c;--line:#E7E3DC;--accent:#1D4ED8;
+ font-family:'Pretendard Variable',Pretendard,-apple-system,'Malgun Gothic',sans-serif;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:14px;}
+.wrap{max-width:1100px;margin:0 auto;padding:22px 20px 50px;}
+h1{font-size:19px;margin:0 0 2px;letter-spacing:-0.02em;}
+.sub{font-size:12.5px;color:var(--muted);margin:0 0 14px;}
+.bar-ctrl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;}
+.btn{border:1px solid var(--line);background:#fff;font:inherit;font-size:12.5px;font-weight:800;color:var(--muted);padding:7px 14px;border-radius:9px;cursor:pointer;transition:.12s;}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.hint{font-size:11.5px;color:var(--faint);}
+.legend{display:flex;flex-wrap:wrap;gap:5px 12px;margin:0 0 12px;}
+.legend span{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--muted);}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+.chart{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 14px 16px;overflow:hidden;}
+.gutter{width:74px;flex:0 0 74px;}
+.head{display:flex;align-items:flex-end;height:34px;border-bottom:1px solid var(--line);}
+.head .track{position:relative;flex:1;height:100%;}
+.yr{position:absolute;bottom:3px;font-size:12px;font-weight:800;color:#b8b2a6;transform:translateX(4px);}
+.mtick{position:absolute;top:0;bottom:0;width:1px;background:#F1EEE8;}
+.mtick.q{background:#E7E3DC;}
+.today{position:absolute;top:0;bottom:0;width:2px;background:#EF4444;z-index:6;}
+.today::after{content:'오늘';position:absolute;top:-1px;left:3px;font-size:9px;font-weight:800;color:#EF4444;white-space:nowrap;}
+
+.row{border-bottom:1px solid #EFEBE3;}
+.row:last-child{border-bottom:none;}
+/* 접힌 요약 줄 — 클릭 영역 */
+.summ{display:flex;align-items:center;cursor:pointer;transition:background .12s;}
+.summ:hover{background:#FAF8F3;}
+.summ .lab{flex:0 0 74px;width:74px;display:flex;align-items:center;gap:5px;padding:6px 0;}
+.summ .lab .car{font-size:10px;color:var(--faint);transition:transform .18s;display:inline-block;}
+.summ .lab b{font-size:15px;font-weight:800;letter-spacing:-0.02em;}
+.summ .lab small{font-size:10px;color:var(--faint);font-weight:700;}
+.summ .track{position:relative;flex:1;height:26px;}
+/* 접힘 상태: 모든 치료를 한 줄에 얇게 겹쳐 표시(요약) */
+.minibar{position:absolute;height:9px;top:8px;border-radius:3px;box-shadow:0 1px 1px rgba(0,0,0,.12);}
+.minibar.prog{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.3) 0 4px,transparent 4px 8px);}
+.minibar.plan{opacity:.5;}
+
+/* 펼친 상세 */
+.detail{overflow:hidden;max-height:0;transition:max-height .22s ease;background:#FCFBF8;}
+.row.open .detail{max-height:600px;}
+.row.open .car{transform:rotate(90deg);}
+.drow{display:flex;align-items:center;border-top:1px dashed #EFEBE3;}
+.drow .dlab{flex:0 0 74px;width:74px;font-size:11px;font-weight:700;color:var(--muted);padding:8px 0 8px 18px;}
+.drow .track{position:relative;flex:1;height:30px;}
+.bar{position:absolute;height:18px;top:6px;border-radius:5px;display:flex;align-items:center;padding:0 7px;color:#fff;font-size:10.5px;font-weight:800;white-space:nowrap;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.13);}
+.bar.prog{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.22) 0 5px,transparent 5px 10px);}
+.bar.plan{opacity:.6;}
+.bar .out{position:absolute;left:calc(100% + 6px);color:var(--ink);font-weight:700;font-size:10px;}
+.bar .dt{position:absolute;left:0;top:calc(100% + 0px);font-size:9px;font-weight:700;color:var(--faint);white-space:nowrap;}
+.foot{font-size:11px;color:var(--faint);margin-top:12px;}
+</style></head><body>
+<div class="wrap">
+<h1>🦷 내원 시간축 — 확장 행 (안B)</h1>
+<p class="sub">평소엔 <b>치아당 한 줄</b>로 접어둬 전체가 한 화면에. <b>궁금한 이만 클릭</b>하면 그 자리에서 치료별 상세가 펼쳐집니다.</p>
+<div class="bar-ctrl">
+  <button class="btn" id="toggleAll">전체 펼치기</button>
+  <span class="hint">치아 줄을 클릭 = 그 이만 펼침 · 접힌 줄의 얇은 막대 = 치료 기간 요약</span>
+</div>
+<div class="legend" id="legend"></div>
+<div class="chart">
+  <div class="head"><div class="gutter"></div><div class="track" id="htrack"></div></div>
+  <div id="rows"></div>
+</div>
+<p class="foot">🧪 데모 데이터(가상 환자) · 빗금=진행중, 흐림=예정 · 점진적 공개(progressive disclosure)</p>
+</div>
+<script>
+var TODAY='2026-04-30';
+var TX=[
+ {t:24,n:'신경치료',c:'endo',s:'2024-02-05',e:'2024-03-08',st:'done'},
+ {t:24,n:'크라운',c:'crown',s:'2024-03-15',e:'2024-04-12',st:'done'},
+ {t:26,n:'발치',c:'surgery',s:'2024-02-20',e:'2024-02-22',st:'done'},
+ {t:26,n:'임플란트 식립',c:'implant',s:'2024-04-01',e:'2024-09-10',st:'done'},
+ {t:26,n:'임플 보철',c:'prosth',s:'2024-09-20',e:'2024-10-25',st:'done'},
+ {t:25,n:'신경치료',c:'endo',s:'2024-06-03',e:'2024-07-01',st:'done'},
+ {t:25,n:'크라운',c:'crown',s:'2024-07-10',e:'2024-08-05',st:'done'},
+ {t:36,n:'잇몸치료(SRP)',c:'perio',s:'2025-10-15',e:'2026-01-20',st:'done'},
+ {t:11,n:'크라운',c:'crown',s:'2026-02-01',e:'2026-03-25',st:'prog'},
+ {t:15,n:'인레이',c:'caries',s:'2026-04-20',e:'2026-05-30',st:'plan'},
+ {t:16,n:'경과관찰',c:'obs',s:'2026-03-01',e:'2026-07-31',st:'plan'}
+];
+var CATC={endo:['신경치료','#2563EB'],crown:['크라운','#7C3AED'],implant:['임플란트','#DC2626'],prosth:['임플보철','#EA580C'],surgery:['발치','#DB2777'],perio:['잇몸치료','#0D9488'],caries:['충전·인레이','#D97706'],obs:['경과관찰','#94A3B8']};
+var RANGE=['2024-01-01','2026-08-01'];
+function P(s){var p=s.split('-');return new Date(+p[0],+p[1]-1,+(p[2]||1));}
+var MIN=P(RANGE[0]),MAX=P(RANGE[1]),SPAN=MAX-MIN;
+function xp(d){return (P(d)-MIN)/SPAN*100;}
+function fmt(s){var p=s.split('-');return p[0].slice(2)+'.'+p[1];}
+
+document.getElementById('legend').innerHTML=Object.keys(CATC).map(function(k){return '<span><i style="background:'+CATC[k][1]+'"></i>'+CATC[k][0]+'</span>';}).join('');
+
+var ht=document.getElementById('htrack'),hh='';
+for(var d=new Date(MIN);d<MAX;d.setMonth(d.getMonth()+1)){
+  var iso=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-01';
+  var q=(d.getMonth()%3===0);
+  hh+='<div class="mtick'+(q?' q':'')+'" style="left:'+xp(iso)+'%"></div>';
+  if(d.getMonth()===0||(d.getFullYear()===MIN.getFullYear()&&d.getMonth()===MIN.getMonth()))
+    hh+='<div class="yr" style="left:'+xp(iso)+'%">'+d.getFullYear()+'</div>';
+}
+hh+='<div class="today" style="left:'+xp(TODAY)+'%"></div>';
+ht.innerHTML=hh;
+
+var byT={};TX.forEach(function(x){(byT[x.t]=byT[x.t]||[]).push(x);});
+var teeth=Object.keys(byT).map(Number).sort(function(a,b){
+  return Math.min.apply(null,byT[a].map(function(x){return +P(x.s);}))-Math.min.apply(null,byT[b].map(function(x){return +P(x.s);}));});
+
+var rowsEl=document.getElementById('rows'),html='';
+teeth.forEach(function(t){
+  var items=byT[t].slice().sort(function(a,b){return P(a.s)-P(b.s);});
+  // 접힌 요약: 모든 치료 얇은 막대 한 줄
+  var mini='';
+  items.forEach(function(it){
+    var L=xp(it.s),W=Math.max(xp(it.e)-xp(it.s),0.7);
+    mini+='<div class="minibar '+it.st+'" style="left:'+L+'%;width:'+W+'%;background:'+CATC[it.c][1]+'"></div>';
+  });
+  // 펼친 상세: 치료별 한 줄씩
+  var det='';
+  items.forEach(function(it){
+    var L=xp(it.s),W=Math.max(xp(it.e)-xp(it.s),0.7),wide=W>9;
+    det+='<div class="drow"><div class="dlab">'+it.n+'</div><div class="track">'
+      +'<div class="bar '+it.st+'" style="left:'+L+'%;width:'+W+'%;background:'+CATC[it.c][1]+'">'+(wide?it.n:'')+(wide?'':'<span class="out">'+it.n+'</span>')
+      +'<span class="dt">'+fmt(it.s)+'→'+fmt(it.e)+(it.st==='prog'?' · 진행중':it.st==='plan'?' · 예정':'')+'</span></div></div></div>';
+  });
+  html+='<div class="row"><div class="summ"><div class="lab"><span class="car">▶</span><b>#'+t+'</b><small>'+items.length+'건</small></div><div class="track">'+mini+'</div></div><div class="detail">'+det+'</div></div>';
+});
+rowsEl.innerHTML=html;
+
+document.querySelectorAll('.summ').forEach(function(s){
+  s.addEventListener('click',function(){s.parentNode.classList.toggle('open');syncBtn();});
+});
+var btn=document.getElementById('toggleAll');
+function syncBtn(){var all=document.querySelectorAll('.row').length,op=document.querySelectorAll('.row.open').length;btn.textContent=(op>=all)?'전체 접기':'전체 펼치기';}
+btn.addEventListener('click',function(){
+  var rows=document.querySelectorAll('.row'),op=document.querySelectorAll('.row.open').length,openAll=op<rows.length;
+  rows.forEach(function(r){r.classList.toggle('open',openAll);});syncBtn();
+});
+syncBtn();
+</script>
+</body></html>

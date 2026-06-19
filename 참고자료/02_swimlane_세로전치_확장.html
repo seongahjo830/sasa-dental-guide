@@ -1,0 +1,225 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>02 스윔레인 (세로 전치) — 날짜=행 / 타입=열</title>
+<style>
+  :root{ --ink:#1e293b; --mut:#64748b; --line:#e2e8f0; --bg:#f8fafc; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Pretendard,system-ui,'Malgun Gothic',sans-serif;color:var(--ink);background:#fff}
+  header{padding:18px 24px;border-bottom:1px solid var(--line)}
+  h1{margin:0;font-size:18px} .sub{color:var(--mut);font-size:13px;margin-top:4px;line-height:1.6}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:12px;color:var(--mut)}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+  /* 세로 스크롤 영역: 가로는 거의 안 넘치고, 세로로 길게 내려가며 본다 */
+  .wrap{padding:0;overflow-y:auto;overflow-x:auto;max-height:calc(100vh - 150px)}
+  table{border-collapse:separate;border-spacing:0;width:100%;min-width:880px}
+
+  /* 열 머리(타입) = 화면 맨 위 고정 */
+  thead th{position:sticky;top:0;z-index:5;background:#0f172a;color:#fff;font-size:12.5px;font-weight:700;
+           padding:11px 8px;text-align:center;white-space:nowrap}
+  thead th.datehd{left:0;z-index:6;background:#0f172a;width:104px}
+  thead th i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:middle}
+
+  /* 날짜 열 = 화면 왼쪽 고정 */
+  td.date{position:sticky;left:0;z-index:4;background:#f8fafc;width:104px;vertical-align:top;
+          border-right:2px solid var(--line);border-bottom:1px solid var(--line);padding:10px 8px;text-align:center}
+  td.date b{display:block;font-size:15px;color:var(--ink)}
+  td.date .yr{font-size:11px;color:var(--mut)}
+  td.date .cnt{margin-top:6px;font-size:10.5px;color:#fff;background:#94a3b8;border-radius:20px;padding:1px 7px;display:inline-block}
+
+  /* 연도 구분 큰 띠 */
+  tr.yearband td{background:#eef2ff;color:#3730a3;font-weight:800;font-size:12px;padding:6px 12px;position:sticky;left:0}
+
+  td.cell{vertical-align:top;border-left:1px dashed var(--line);border-bottom:1px solid var(--line);padding:6px 6px;min-width:118px}
+  tr:hover td.date{background:#eef5ff}
+  tr.row:hover td.cell{background:#fafcff}
+
+  .ev{border-radius:8px;padding:6px 8px;font-size:11.5px;line-height:1.35;cursor:pointer;color:#fff;
+      box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .12s;margin-bottom:5px}
+  .ev:last-child{margin-bottom:0}
+  .ev:hover{transform:translateY(-2px)}
+  .ev .teeth{font-weight:800;opacity:.95}
+  .ev .det{font-size:10.5px;opacity:.93;margin-top:4px;display:none;border-top:1px solid rgba(255,255,255,.35);padding-top:4px}
+  .ev.open .det{display:block}
+  .ev .flag{font-size:10px;background:rgba(255,255,255,.25);border-radius:4px;padding:0 4px;margin-left:4px}
+
+  .note{margin:24px 24px 50px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:13px;color:#475569;line-height:1.7}
+  .note b{color:var(--ink)}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid var(--line);align-items:center}
+  .toolbar button{font-size:12px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 11px;cursor:pointer}
+  .toolbar button:hover{background:#f1f5f9}
+  .toolbar .lbl{font-size:12px;color:var(--mut);margin-right:2px}
+</style></head><body>
+<header>
+  <h1>02 · 스윔레인 (세로 전치판) — 날짜=세로 / 타입=가로</h1>
+  <div class="sub">기존 스윔레인을 <b>행·열 교환</b>: 가로 스크롤 대신 <b>세로로 내려가며</b> 히스토리를 본다. 위→아래 = 최신→과거.
+  맨 위 타입 머리(CC·PI·진료·처방·동의서·메모)와 맨 왼쪽 날짜 칸이 스크롤해도 고정.<br>
+  치료를 더 많이 받았다고 가정해 회차(내원일)를 대폭 늘린 시연 데이터.</div>
+  <div class="legend" id="legend"></div>
+</header>
+<div class="toolbar">
+  <span class="lbl">정렬</span>
+  <button id="btnSort">최신 → 과거 ▼</button>
+  <button id="btnOpen">모두 펼치기</button>
+  <button id="btnClose">모두 접기</button>
+  <span class="lbl" style="margin-left:auto">셀 클릭 = 상세 토글</span>
+</div>
+<div class="wrap"><table id="tbl"></table></div>
+<div class="note">
+  <b>전치(transpose)로 바뀐 점</b> — 원본은 "타입이 행, 날짜가 열 → 가로 스크롤". 이 버전은 <b>날짜가 행, 타입이 열 → 세로 스크롤</b>. 내원이 많아질수록(이 시연 12회) 가로보다 <b>세로로 길게 쌓는 게 자연스럽다</b>(전화·통장내역처럼 아래로 내려가며 과거 추적).<br>
+  <b>읽는 법</b> 한 줄(=하루)을 가로로 보면 "그날 CC·검사·진료·처방을 한눈에", 한 칸(=타입)을 세로로 따라가면 "처방만 / 진료만 시계열". 빈 칸도 정보다("그날 안 한 것").<br>
+  <b>강점</b> 내원 수가 많아도 세로로 무한 확장·휴대폰 스크롤에 자연스러움 · <b>약점</b> 타입 7열이라 좁은 화면에선 가로도 약간 스크롤 필요.
+</div>
+
+<script>
+/* ── 팔레트 ── */
+const PALETTE = {
+  'CC'    : { c:'#db2777', label:'CC' },
+  'PI'    : { c:'#ea580c', label:'PI검사' },
+  '진료'  : { c:'#2563eb', label:'진료' },
+  '처방'  : { c:'#0d9488', label:'처방' },
+  '동의서': { c:'#16a34a', label:'동의서' },
+  '메모'  : { c:'#64748b', label:'메모' },
+  'Next'  : { c:'#7c3aed', label:'Next(예약)' },
+};
+const ORDER = ['CC','PI','진료','처방','동의서','메모','Next'];
+
+/* ── 확장 시연 데이터: 치료를 더 많이 받았다고 가정 (12회 내원) ── */
+const EVENTS = [
+  // 2024-01-24 초진
+  { date:'2024-01-24', type:'메모',  title:'초진 — 최초 치료계획 수립', doctor:'dr.김병훈', teeth:[], details:['전반 검진·파노라마 촬영','우측 구치부 시림 호소 시작'] },
+  { date:'2024-01-24', type:'PI',    title:'초진 구강검사', doctor:'dr.김병훈', teeth:[16,17,26,46],
+    details:['#16 우식 의심 · #46 마모','전악 치주 상태 양호'] },
+  { date:'2024-01-24', type:'진료',  title:'스케일링 (전악)', doctor:'위생사/박', teeth:[], code:'치석제거 보험',
+    details:['치주 초기 관리'] },
+
+  // 2024-02-07 충치치료
+  { date:'2024-02-07', type:'CC',    title:'"찬물 마실 때 시려요"', doctor:'조효정', teeth:[16] },
+  { date:'2024-02-07', type:'진료',  title:'#16 복합레진 충전', doctor:'dr.조성아', teeth:[16], code:'K02 치아우식',
+    details:['우식 제거 후 광중합 레진(비보험)'] },
+  { date:'2024-02-07', type:'처방',  title:'시린이 완화 치약 안내', doctor:'dr.조성아', teeth:[], details:['크레스트 등 권장'] },
+
+  // 2024-06-20 정기검진
+  { date:'2024-06-20', type:'메모',  title:'6개월 정기검진 내원', doctor:'염도윤', teeth:[] },
+  { date:'2024-06-20', type:'진료',  title:'스케일링 (전악)', doctor:'위생사/박', teeth:[], code:'치석제거 보험', details:[] },
+  { date:'2024-06-20', type:'PI',    title:'#46 마모 경과 관찰', doctor:'dr.조성아', teeth:[46], details:['마모 진행 느림 · 경과관찰'] },
+
+  // 2025-01-15 정기검진
+  { date:'2025-01-15', type:'메모',  title:'정기검진 · 1년 경과', doctor:'염도윤', teeth:[] },
+  { date:'2025-01-15', type:'진료',  title:'스케일링 (전악)', doctor:'위생사/박', teeth:[], code:'치석제거 보험', details:[] },
+  { date:'2025-01-15', type:'CC',    title:'"왼쪽 위 잇몸이 가끔 부어요"', doctor:'조효정', teeth:[26] },
+
+  // 2025-03-02 #26 관련 시작
+  { date:'2025-03-02', type:'PI',    title:'#26 검사 — 잇몸 부종', doctor:'dr.조성아', teeth:[26], flag:true,
+    details:['#26 타진(+) 약함 · 냉검 정상','방사선 1매 — 근단 음영 의심 → 경과관찰'] },
+  { date:'2025-03-02', type:'처방',  title:'소염제 3일분', doctor:'dr.조성아', teeth:[], details:['부종 완화 목적'] },
+
+  // 2025-09-10 크라운 준비(다른 치아)
+  { date:'2025-09-10', type:'CC',    title:'"오래된 금니가 헐거워요"', doctor:'조효정', teeth:[36] },
+  { date:'2025-09-10', type:'진료',  title:'#36 기존 보철 제거·재형성', doctor:'dr.조성아', teeth:[36], code:'보철 재제작',
+    details:['오래된 금관 제거 · 코어 빌드업'] },
+  { date:'2025-09-10', type:'동의서', title:'[동의서] 보철(크라운) 치료 동의', doctor:'2층 태블릿', teeth:[], details:['📍 2층 태블릿'] },
+  { date:'2025-09-10', type:'Next',  title:'#36 크라운 인상·세팅 [2주 후]', doctor:'dr.조/효정', teeth:[36] },
+
+  // 2025-09-24 크라운 세팅
+  { date:'2025-09-24', type:'진료',  title:'#36 지르코니아 크라운 세팅', doctor:'dr.조성아', teeth:[36], code:'보철 장착',
+    details:['교합 조정 후 접착'] },
+  { date:'2025-09-24', type:'처방',  title:'없음 (경과 양호)', doctor:'dr.조성아', teeth:[] },
+
+  // 2026-01-24 정기 + 계획 갱신
+  { date:'2026-01-24', type:'메모',  title:'정기검진 · 2년차', doctor:'염도윤', teeth:[] },
+  { date:'2026-01-24', type:'PI',    title:'전악 재평가', doctor:'dr.조성아', teeth:[17,26], flag:true,
+    details:['#17 시림 새로 호소 · #26 근단 음영 진행','우측 구치부 집중 치료 계획 필요'] },
+
+  // 2026-03-06 치료계획
+  { date:'2026-03-06', type:'메모',  title:'현재 치료계획 수립 (우측 참고)', doctor:'dr.진송아', teeth:[],
+    details:['#26 근관치료 → 크라운 / #17 근관치료 검토'] },
+
+  // 2026-03-10 환자요청
+  { date:'2026-03-10', type:'메모',  title:'환자 요청 — 발치를 4월 이후 희망', doctor:'염도윤', teeth:[], details:['개인 일정상 4월 이후로'] },
+
+  // 2026-04-30 집중 치료일 (원본의 핵심 날)
+  { date:'2026-04-30', type:'CC',    title:'우측 시린 증상 — 괜찮으면 #26 근관치료 시작', doctor:'조효정', teeth:[26],
+    details:['ca pol · 우측 시림 지속 → #26 endo 시작 예정 (/dr.조/정연)'] },
+  { date:'2026-04-30', type:'PI',    title:'Present Illness — 우측 시림 검사', doctor:'dr.조성아', teeth:[17,15], flag:true,
+    details:['#7 Air(+) · #54 Air(−) · #7654 Bite(−)','환자: "맨 뒤 큰어금니가 시려요 / 똑같이 시려요"',
+             '#17 endo-cr 필요 — 보호자 동의 필요 (전화 확인 /민)','📷 방사선 1매 · 우클릭 판독문'] },
+  { date:'2026-04-30', type:'진료',  title:'근관치료 — #26 Caviton Sealing', doctor:'dr.조성아', teeth:[26],
+    details:['inject 14:48 (dr이)'] },
+  { date:'2026-04-30', type:'진료',  title:'발수·근관확대·치근단·보철물제거', doctor:'dr.조성아', teeth:[17], code:'K04.01 비가역적 치수염',
+    details:['치근단 1매 외 9개 항목'] },
+  { date:'2026-04-30', type:'진료',  title:'충전물 연마', doctor:'dr.조성아', teeth:[46], code:'K03.18 치아 마모', details:[] },
+  { date:'2026-04-30', type:'동의서', title:'[문진표/동의서] 근관치료 동의서', doctor:'2층 태블릿', teeth:[], details:['📍 2층 태블릿'] },
+  { date:'2026-04-30', type:'처방',  title:'원외 처방 — 경증 3일분', doctor:'dr.조성아', teeth:[],
+    details:['씨트클러캡슐 250mg(세파클러) 외 1항목'] },
+  { date:'2026-04-30', type:'Next',  title:'ce (크라운 시작) [1주 후]', doctor:'dr.조/효정', teeth:[] },
+
+  // 2026-05-08 후속
+  { date:'2026-05-08', type:'진료',  title:'#26 근관충전(obturation)', doctor:'dr.조성아', teeth:[26], code:'근관충전',
+    details:['#26 근관 3관 충전 완료 → 코어'] },
+  { date:'2026-05-08', type:'진료',  title:'#17 2차 근관 형성', doctor:'dr.조성아', teeth:[17], details:['근관 세척·소독 교체'] },
+  { date:'2026-05-08', type:'Next',  title:'#26 크라운 인상 [2주 후]', doctor:'dr.조/효정', teeth:[26] },
+];
+
+/* ── 렌더 ── */
+const tbl = document.getElementById('tbl');
+let descending = true; // 최신 위
+
+function uniqueDates(){
+  const ds=[...new Set(EVENTS.map(e=>e.date))].sort();
+  return descending ? ds.reverse() : ds;
+}
+const fmtMD = d => { const [,m,day]=d.split('-'); return `${m}.${day}`; };
+const fmtY  = d => d.split('-')[0];
+
+function evCard(e){
+  const v=PALETTE[e.type];
+  const teeth=e.teeth&&e.teeth.length?` <span class="teeth">${e.teeth.map(t=>'#'+t).join(' ')}</span>`:'';
+  const flag=e.flag?`<span class="flag">⚑ 주의</span>`:'';
+  const det=(e.code?'🏷 '+e.code+'<br>':'')+(e.details||[]).join('<br>');
+  return `<div class="ev" style="background:${v.c}" onclick="this.classList.toggle('open')">`+
+    `<div>${e.title}${teeth}${flag}</div>`+
+    (det?`<div class="det">${det}<br>👤 ${e.doctor}</div>`:`<div class="det">👤 ${e.doctor}</div>`)+
+    `</div>`;
+}
+
+function render(){
+  const dates=uniqueDates();
+  // head
+  let html=`<thead><tr><th class="datehd">내원일</th>`;
+  ORDER.forEach(t=>{ const v=PALETTE[t]; html+=`<th><i style="background:${v.c}"></i>${v.label}</th>`; });
+  html+=`</tr></thead><tbody>`;
+  // rows
+  let lastYear=null;
+  dates.forEach(d=>{
+    const yr=fmtY(d);
+    if(yr!==lastYear){ html+=`<tr class="yearband"><td colspan="${ORDER.length+1}">📅 ${yr}년</td></tr>`; lastYear=yr; }
+    const cnt=EVENTS.filter(e=>e.date===d).length;
+    html+=`<tr class="row"><td class="date"><b>${fmtMD(d)}</b><span class="yr">${yr}</span><span class="cnt">${cnt}건</span></td>`;
+    ORDER.forEach(t=>{
+      const evs=EVENTS.filter(e=>e.date===d&&e.type===t);
+      html+=`<td class="cell">`+evs.map(evCard).join('')+`</td>`;
+    });
+    html+=`</tr>`;
+  });
+  html+=`</tbody>`;
+  tbl.innerHTML=html;
+}
+render();
+
+/* legend */
+document.getElementById('legend').innerHTML = ORDER.map(t=>{
+  const v=PALETTE[t]; return `<span><i style="background:${v.c}"></i>${v.label}</span>`;
+}).join('');
+
+/* toolbar */
+document.getElementById('btnSort').onclick = function(){
+  descending=!descending;
+  this.textContent = descending ? '최신 → 과거 ▼' : '과거 → 최신 ▲';
+  render();
+};
+document.getElementById('btnOpen').onclick  = ()=>document.querySelectorAll('.ev').forEach(e=>e.classList.add('open'));
+document.getElementById('btnClose').onclick = ()=>document.querySelectorAll('.ev').forEach(e=>e.classList.remove('open'));
+</script>
+</body></html>

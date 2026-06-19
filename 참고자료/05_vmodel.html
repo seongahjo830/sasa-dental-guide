@@ -1,0 +1,66 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>05 V-Model — 인과 사슬로 보기</title>
+<style>
+  :root{ --ink:#1e293b; --mut:#64748b; --line:#e2e8f0; --bg:#f8fafc; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Pretendard,system-ui,'Malgun Gothic',sans-serif;color:var(--ink);background:#fff}
+  header{padding:18px 24px;border-bottom:1px solid var(--line)}
+  h1{margin:0;font-size:18px} .sub{color:var(--mut);font-size:13px;margin-top:4px}
+  .wrap{padding:24px;overflow-x:auto}
+  .thread{margin-bottom:22px;border:1px solid var(--line);border-radius:14px;padding:14px 16px 18px;background:#fff;min-width:680px}
+  .thtitle{font-size:14px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .tdot{width:12px;height:12px;border-radius:50%}
+  .chain{display:flex;align-items:stretch;gap:0}
+  .step{flex:1;min-width:150px;position:relative;display:flex;flex-direction:column}
+  .arrow{align-self:center;color:#94a3b8;font-size:22px;padding:0 4px;flex:none;display:flex;align-items:center}
+  .when{font-size:11px;color:var(--mut);margin-bottom:5px;font-weight:700}
+  .box{border:2px solid;border-radius:11px;padding:10px 11px;background:#fff;height:100%;cursor:pointer;transition:transform .12s,box-shadow .12s}
+  .box:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(15,23,42,.1)}
+  .chip{font-size:10px;font-weight:700;color:#fff;border-radius:20px;padding:1px 8px}
+  .bt{font-size:13px;font-weight:600;margin-top:7px;line-height:1.4}
+  .teeth{font-weight:800}
+  .bd{font-size:11px;color:var(--mut);margin-top:5px;line-height:1.5;display:none}
+  .box.open .bd{display:block}
+  .cause{font-size:10.5px;color:#94a3b8;text-align:center;margin-top:-2px;margin-bottom:3px}
+  .note{margin-top:10px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:13px;color:#475569;line-height:1.7}
+  .note b{color:var(--ink)}
+  .legend{font-size:11px;color:var(--mut);margin-bottom:12px}
+</style></head><body>
+<header><h1>05 · V-Model — 시간순 나열이 아니라 "사건의 인과 구조"로</h1>
+<div class="sub">같은 임상 문제(치아)별로 <b>증상 → 검사 → 진단 → 치료 → 다음</b>이 화살표로 이어진다. "왜 이 진료를 했나"가 한 줄로 읽힘. 일반 타임라인보다 가독성·시간추론에서 우수하다고 검증된 모델.</div></header>
+<div class="wrap">
+  <div class="legend">🧵 임상 문제(스레드)별로 묶어 인과로 연결 — 평면 나열이 못 보여주는 "원인→결과"를 드러냄</div>
+  <div id="threads"></div>
+  <div class="note">
+    <b>이 안의 핵심</b> — #26은 "우측 시림 호소 → Caviton Sealing → 다음주 크라운"이 한 사슬로, #17은 "시림 검사(Air/Bite) → 비가역적 치수염 진단 → 발수·근관확대"가 한 사슬로 보임. 평면 피드에선 04.30에 8건이 섞여 안 보이던 논리가 드러남.<br>
+    <b>강점</b> "왜 했나"·진단 논리 추적 최강·교육/설명/분쟁대비에 강함 · <b>약점</b> 스레드 분류 로직이 필요(누가 묶나), 단순 시간순 확인엔 과함.
+  </div>
+</div>
+<script src="_data.js"></script>
+<script>
+const wrap=document.getElementById('threads');
+const causeLabel={ e2:'주소(호소)', e4:'당일 처치', e1:'후속 예약', e3:'검사', e5:'진단·처치', e6:'처치', e11:'시작', e10:'수립', e9:'환자요청' };
+THREADS.forEach(th=>{
+  let chain='';
+  th.steps.forEach((id,i)=>{
+    const e=byId(id); const v=PALETTE[e.type];
+    const teeth=e.teeth&&e.teeth.length?` <span class="teeth" style="color:${v.c}">${e.teeth.map(t=>'#'+t).join(' ')}</span>`:'';
+    const det=(e.code?`<span style="color:#dc2626">${e.code}</span><br>`:'')+(e.details||[]).join('<br>')+`<br>👤 ${e.doctor}`;
+    if(i>0) chain+=`<div class="arrow">➜</div>`;
+    chain+=`<div class="step">
+       <div class="when">${fmtDate(e.date)} '${fmtYear(e.date)}</div>
+       <div class="cause">${causeLabel[id]||''}</div>
+       <div class="box" style="border-color:${v.c}" onclick="this.classList.toggle('open')">
+         <span class="chip" style="background:${v.c}">${v.label}</span>
+         <div class="bt">${e.title}${teeth}</div>
+         <div class="bd">${det}</div>
+       </div></div>`;
+  });
+  wrap.insertAdjacentHTML('beforeend',
+    `<div class="thread">
+       <div class="thtitle"><span class="tdot" style="background:${th.color}"></span>${th.label}</div>
+       <div class="chain">${chain}</div>
+     </div>`);
+});
+</script>{G}<script>/*DATA-GUARD*/(function(){var ok=(typeof THREADS!=="undefined")||(typeof EVENTS!=="undefined");if(!ok){var b=document.createElement("div");b.style.cssText="position:fixed;left:0;right:0;top:0;z-index:99999;background:#fff3cd;color:#7a5b00;border-bottom:1px solid #ffe08a;padding:10px 16px;font:600 13px/1.5 -apple-system,Pretendard,sans-serif;text-align:center";b.textContent="⏳ 이 시안의 데이터 파일(_data.js)이 아직 연동되지 않아 내용이 비어 있습니다. 데이터 연결 후 정상 표시됩니다.";document.body.appendChild(b);}})();</script></body></html>
