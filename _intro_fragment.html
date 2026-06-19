@@ -1,96 +1,104 @@
 <!-- ===== SB-INTRO (셀링 인트로 투어) START ===== injected by patch-intro.mjs ===== -->
 <style id="sb-intro-style">
-#sb-intro{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;
+/* 반투명 스크림 — 뒤의 살아있는 현황판이 비쳐 보이게 */
+#sb-intro{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-  background:radial-gradient(120% 120% at 50% -10%,#13284a 0%,#0a1424 55%,#070e1c 100%);
+  background:rgba(8,14,26,.46);backdrop-filter:blur(7px) saturate(118%);-webkit-backdrop-filter:blur(7px) saturate(118%);
   color:#eaf0fa;opacity:1;transition:opacity .4s ease;-webkit-font-smoothing:antialiased;}
 #sb-intro.sb-hide{opacity:0;pointer-events:none;}
 #sb-intro *{box-sizing:border-box;}
-.sb-skip{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.07);color:#c2d2ea;border:1px solid rgba(255,255,255,.12);
+.sb-skip{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.1);color:#dbe5f5;border:1px solid rgba(255,255,255,.16);
   border-radius:999px;padding:8px 15px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;
   backdrop-filter:blur(4px);transition:background .15s,color .15s;}
-.sb-skip:hover{background:rgba(255,255,255,.14);color:#fff;}
-.sb-card{width:min(560px,92vw);max-height:92vh;overflow-y:auto;background:linear-gradient(180deg,rgba(22,38,66,.92),rgba(13,24,44,.94));
-  border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:30px 30px 22px;
-  box-shadow:0 30px 80px -24px rgba(0,0,0,.8);position:relative;}
-.sb-dots{display:flex;gap:7px;justify-content:center;margin-bottom:20px;}
-.sb-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:all .2s;padding:0;border:0;}
-.sb-dot.on{background:#3182f6;width:22px;border-radius:99px;}
-.sb-dot.done{background:rgba(49,130,246,.5);}
-.sb-kick{font-size:12.5px;font-weight:800;letter-spacing:.4px;color:#5b9bff;margin-bottom:9px;text-transform:none;}
+.sb-skip:hover{background:rgba(255,255,255,.18);color:#fff;}
+
+/* ⭐ 고정 높이 카드 = 다음 버튼이 슬라이드마다 안 움직임(한 위치 연타) */
+.sb-card{width:min(540px,94vw);height:min(556px,86vh);display:flex;flex-direction:column;
+  background:linear-gradient(180deg,rgba(20,34,60,.82),rgba(11,21,40,.86));backdrop-filter:blur(18px) saturate(130%);-webkit-backdrop-filter:blur(18px) saturate(130%);
+  border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:26px 28px 20px;
+  box-shadow:0 30px 80px -22px rgba(0,0,0,.7);position:relative;}
+.sb-dots{display:flex;gap:7px;justify-content:center;margin-bottom:16px;flex-shrink:0;}
+.sb-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.22);cursor:pointer;transition:all .2s;padding:0;border:0;}
+.sb-dot.on{background:#4d9bff;width:22px;border-radius:99px;}
+.sb-dot.done{background:rgba(77,155,255,.5);}
+
+/* stage = 가운데 정렬되는 가변 콘텐츠 영역(넘치면 스크롤), 위아래로 nav는 고정 */
+.sb-stage{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;}
+.sb-kick{font-size:12.5px;font-weight:800;letter-spacing:.3px;color:#6fb0ff;margin-bottom:10px;}
 .sb-kick.warn{color:#ff8a7a;}
 .sb-kick.good{color:#43d6a0;}
-.sb-title{font-size:clamp(20px,5.2vw,26px);font-weight:800;line-height:1.32;letter-spacing:-.4px;margin:0 0 12px;color:#fff;word-break:keep-all;}
-.sb-body{font-size:14.5px;line-height:1.72;color:#bccbe2;margin:0 0 18px;word-break:keep-all;}
+.sb-title{font-size:clamp(21px,5.4vw,27px);font-weight:800;line-height:1.34;letter-spacing:-.5px;margin:0 0 13px;color:#fff;word-break:keep-all;}
+.sb-body{font-size:15px;line-height:1.74;color:#c3d0e6;margin:0 0 18px;word-break:keep-all;}
 .sb-body b{color:#fff;font-weight:700;}
-.sb-body .hl{color:#7fb2ff;font-weight:700;}
-.sb-body .hlw{color:#ff9384;font-weight:700;}
+.sb-body .hl{color:#8fc0ff;font-weight:800;}
+.sb-body .hlw{color:#ff9d8e;font-weight:800;}
 .sb-stage{animation:sbIn .38s cubic-bezier(.2,.7,.2,1);}
 @keyframes sbIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
-.sb-vis{margin:0 0 20px;}
-/* nav */
-.sb-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:6px;}
-.sb-count{font-size:12px;color:#7c8aa3;font-variant-numeric:tabular-nums;flex-shrink:0;}
+.sb-vis{margin:2px 0 2px;}
+
+/* nav — 하단 고정. 다음 버튼은 항상 오른쪽 끝 같은 자리 */
+.sb-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;flex-shrink:0;}
+.sb-count{font-size:12px;color:#8493ad;font-variant-numeric:tabular-nums;flex-shrink:0;}
 .sb-btns{display:flex;gap:9px;align-items:center;}
-.sb-prev{background:transparent;color:#9fb1cc;border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:11px 16px;
+.sb-prev{background:transparent;color:#a6b6d0;border:1px solid rgba(255,255,255,.16);border-radius:11px;padding:11px 16px;
   font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}
-.sb-prev:hover{color:#fff;border-color:rgba(255,255,255,.3);}
+.sb-prev:hover{color:#fff;border-color:rgba(255,255,255,.34);}
 .sb-prev[hidden]{display:none;}
-.sb-next{background:#3182f6;color:#fff;border:0;border-radius:11px;padding:11px 20px;font-size:14.5px;font-weight:800;
-  cursor:pointer;font-family:inherit;box-shadow:0 10px 24px -10px rgba(49,130,246,.85);transition:transform .12s,filter .15s;}
+/* 크기 고정(패딩·최소폭 동일) → 연타해도 버튼 안 움직임. 마지막 슬라이드는 색만 바뀜 */
+.sb-next{background:#3182f6;color:#fff;border:0;border-radius:11px;padding:12px 20px;font-size:14.5px;font-weight:800;
+  cursor:pointer;font-family:inherit;min-width:118px;text-align:center;
+  box-shadow:0 10px 24px -10px rgba(49,130,246,.85);transition:transform .12s,filter .15s,background .2s;}
 .sb-next:hover{filter:brightness(1.08);}
 .sb-next:active{transform:scale(.97);}
-.sb-next.cta{background:linear-gradient(135deg,#3182f6,#2563eb);padding:13px 26px;font-size:15px;}
+.sb-next.cta{background:linear-gradient(135deg,#3aa0ff,#2563eb);}
+
 /* ----- mini mockups ----- */
-.sb-list{border-radius:12px;padding:11px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);}
-.sb-lrow{display:flex;align-items:center;gap:8px;padding:7px 9px;margin-bottom:5px;border-radius:7px;background:rgba(255,255,255,.045);}
+.sb-list{border-radius:12px;padding:11px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);}
+.sb-lrow{display:flex;align-items:center;gap:8px;padding:7px 9px;margin-bottom:5px;border-radius:7px;background:rgba(255,255,255,.05);}
 .sb-lrow:last-child{margin-bottom:0;}
-.sb-lbar{height:8px;border-radius:4px;background:rgba(255,255,255,.18);flex:1;}
-.sb-lq{font-size:12px;color:#ff9384;font-weight:800;flex-shrink:0;}
-.sb-lmut{font-size:11px;color:#6f7d95;flex-shrink:0;}
-.sb-tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:7px 11px;border-radius:9px;margin:0 6px 6px 0;}
-.sb-tag.bad{background:rgba(255,90,72,.14);color:#ff9384;border:1px solid rgba(255,90,72,.25);}
-.sb-tag.ok{background:rgba(52,211,153,.13);color:#5fe0b0;border:1px solid rgba(52,211,153,.25);}
+.sb-lbar{height:8px;border-radius:4px;background:rgba(255,255,255,.2);flex:1;}
+.sb-lq{font-size:12px;color:#ff9d8e;font-weight:800;flex-shrink:0;}
+.sb-lmut{font-size:11px;color:#7a88a0;flex-shrink:0;}
 .sb-chairs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
-.sb-chair{position:relative;width:60px;height:46px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);
-  display:flex;align-items:center;justify-content:center;font-size:12px;color:#9fb1cc;font-weight:700;}
+.sb-chair{position:relative;width:60px;height:46px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  display:flex;align-items:center;justify-content:center;font-size:12px;color:#a6b6d0;font-weight:700;}
 .sb-chair .q{position:absolute;top:-7px;right:-5px;font-size:14px;color:#ff8a7a;font-weight:900;transform:rotate(12deg);}
 /* mini board */
-.sb-mb{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;position:relative;overflow:hidden;}
+.sb-mb{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:10px;position:relative;overflow:hidden;}
 .sb-mb-r{display:flex;align-items:center;gap:7px;height:21px;margin-bottom:4px;}
 .sb-mb-r:last-child{margin-bottom:0;}
-.sb-mb-lab{width:30px;font-size:10px;color:#7c8aa3;flex-shrink:0;text-align:center;}
-.sb-mb-track{flex:1;position:relative;height:17px;border-radius:5px;background:rgba(255,255,255,.04);}
+.sb-mb-lab{width:30px;font-size:10px;color:#8493ad;flex-shrink:0;text-align:center;}
+.sb-mb-track{flex:1;position:relative;height:17px;border-radius:5px;background:rgba(255,255,255,.05);}
 .sb-mb-blk{position:absolute;top:1px;bottom:1px;border-radius:4px;display:flex;align-items:center;padding:0 5px;font-size:9.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;}
-.sb-mb-blk.dash{background:transparent!important;border:1px dashed rgba(255,255,255,.3);color:#9fb1cc;}
-.sb-mb-now{position:absolute;top:-3px;bottom:-3px;width:2px;background:#5b9bff;z-index:5;}
-.sb-mb-now::after{content:"지금";position:absolute;top:-12px;left:-9px;font-size:8px;color:#5b9bff;font-weight:800;}
-.sb-mb-free{position:absolute;top:1px;bottom:1px;border-radius:4px;border:1px dashed #43d6a0;background:rgba(67,214,160,.1);display:flex;align-items:center;justify-content:center;font-size:8.5px;color:#5fe0b0;font-weight:800;}
+.sb-mb-blk.dash{background:transparent!important;border:1px dashed rgba(255,255,255,.32);color:#a6b6d0;}
+.sb-mb-now{position:absolute;top:-3px;bottom:-3px;width:2px;background:#6fb0ff;z-index:5;}
+.sb-mb-now::after{content:"지금";position:absolute;top:-12px;left:-9px;font-size:8px;color:#6fb0ff;font-weight:800;}
+.sb-mb-free{position:absolute;top:1px;bottom:1px;border-radius:4px;border:1px dashed #43d6a0;background:rgba(67,214,160,.12);display:flex;align-items:center;justify-content:center;font-size:8.5px;color:#5fe0b0;font-weight:800;}
 /* split before/after */
 .sb-split{display:flex;align-items:center;gap:10px;}
 .sb-half{flex:1;min-width:0;}
 .sb-half h4{margin:0 0 6px;font-size:11px;font-weight:800;text-align:center;}
-.sb-half.b h4{color:#ff9384;}
+.sb-half.b h4{color:#ff9d8e;}
 .sb-half.a h4{color:#5fe0b0;}
-.sb-arrow{flex-shrink:0;font-size:20px;color:#5b9bff;font-weight:900;}
-.sb-half.b{opacity:.62;}
+.sb-arrow{flex-shrink:0;font-size:20px;color:#6fb0ff;font-weight:900;}
+.sb-half.b{opacity:.6;}
 /* benefit list */
 .sb-ben{list-style:none;margin:0;padding:0;}
-.sb-ben li{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13.5px;color:#cdd9ec;line-height:1.5;}
+.sb-ben li{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:14.5px;color:#d2deef;line-height:1.5;}
 .sb-ben li:last-child{border-bottom:0;}
 .sb-ben .ic{color:#43d6a0;font-weight:900;flex-shrink:0;margin-top:1px;}
 .sb-ben b{color:#fff;}
-.sb-ben .pay{color:#7fb2ff;font-weight:800;}
+.sb-ben .pay{color:#8fc0ff;font-weight:800;}
 /* replay button on board */
 #sb-replay{position:fixed;bottom:14px;right:14px;z-index:9998;background:rgba(12,68,124,.92);color:#fff;border:0;border-radius:999px;
   padding:9px 15px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;display:none;align-items:center;gap:6px;
   box-shadow:0 6px 20px -8px rgba(0,0,0,.5);backdrop-filter:blur(4px);}
 #sb-replay:hover{filter:brightness(1.12);}
 @media (max-width:430px){
-  .sb-card{padding:24px 20px 18px;border-radius:18px;}
+  .sb-card{padding:22px 18px 16px;border-radius:18px;height:min(540px,90vh);}
   .sb-body{font-size:14px;}
-  .sb-next{padding:11px 16px;}
-  .sb-prev{padding:10px 13px;}
+  .sb-next{padding:12px 14px;min-width:104px;}
+  .sb-prev{padding:11px 13px;}
   .sb-chair{width:52px;height:42px;}
 }
 @media (prefers-reduced-motion:reduce){.sb-stage{animation:none;}#sb-intro{transition:none;}}
@@ -115,7 +123,7 @@
 <script id="sb-intro-script">
 (function(){
   "use strict";
-  var KEY='sasaBoardIntro:v1';
+  var KEY='sasaBoardIntro:v2';   // 슬라이드 개편 → 키 갱신(기존 사용자도 새 인트로 1회 노출)
   var root=document.getElementById('sb-intro');
   var replay=document.getElementById('sb-replay');
   if(!root) return;
@@ -154,64 +162,40 @@
     return h;
   }
 
-  // ---- 슬라이드 (기승전결: PAS → Before/After → 혜택 → CTA) ----
+  // ---- 슬라이드 4장 (공감 → 통찰 → 해결 → 이득+CTA). 한 장 = 한 메시지, 짧게. ----
   var SLIDES=[
-    { // 기 / Hook
-      kick:'잠깐 — 보드 보기 전에 30초만', kc:'',
-      title:'지금 우리 진료실, 누가 뭘 하고 있죠?',
-      body:'체어 6개가 동시에 돕니다. 원장 4명, 직원 5명, 거기에 신환과 시간약속까지. 이걸 다 <b>머릿속으로</b> 따라가고 계셨죠.',
+    { // 1. 공감 Hook
+      kick:'보드 보기 전에 · 20초', kc:'',
+      title:'지금 우리 진료실,<br>누가 뭘 하고 있죠?',
+      body:'체어 6개가 동시에 돌아갑니다. 그걸 지금까진 <b>머릿속으로</b> 따라가셨죠.',
       vis:'<div class="sb-chairs">'+[1,2,3,4,5,6].map(function(n){return '<div class="sb-chair">'+n+'번<span class="q">?</span></div>';}).join('')+'</div>'
     },
-    { // 승 / Problem
-      kick:'매일 반복되는 장면', kc:'warn',
-      title:'"다음엔 누구 부르지? 김쌤은 어디 갔지?"',
-      body:'덴트웹 접수목록은 결국 <b>이름이 줄줄이 나열된 리스트</b>. 누가 언제 끝나는지, 어느 체어가 곧 비는지, 어느 원장 손이 비는지 — <span class="hlw">한 줄 한 줄 머리로 계산</span>해야 겨우 보입니다.',
-      vis:messyList()
-    },
-    { // 승 / Agitate
-      kick:'그래서 매일 새는 것', kc:'warn',
-      title:'그 "0.5초 망설임"이 하루 종일 쌓입니다',
-      body:'빈 체어를 놓쳐 환자를 늦게 부르고 · 원장 손이 떴는데 아무도 모르고 · 직원 둘이 한 원장에 몰리고 · 길어지는 시술을 너무 늦게 알고. <b>진료가 밀린 것도 아닌데</b> 이상하게 정신없고 지치는 진짜 이유.',
-      vis:'<div>'+
-        '<span class="sb-tag bad"><i class="ti ti-flame"></i> 김원장 두 체어 겹침</span>'+
-        '<span class="sb-tag bad"><i class="ti ti-alarm"></i> 12:30 약속 놓칠 뻔</span>'+
-        '<span class="sb-tag bad"><i class="ti ti-armchair"></i> 3번 비었는데 호출 늦음</span>'+
-        '<span class="sb-tag bad"><i class="ti ti-clock-exclamation"></i> prep 예상보다 +10분</span>'+
-        '</div>'
-    },
-    { // 전 / Insight (the turn) — 핵심 메시지
-      kick:'진짜 원인은 따로 있습니다', kc:'',
-      title:'일이 많아서가 아닙니다.<br>‘현황’이 안 보여서입니다.',
-      body:'같은 정보라도 <span class="hlw">리스트</span>로 보면 일일이 계산해야 하고, <span class="hl">한 판</span>으로 보면 그냥 눈에 들어옵니다. 판단이 어려운 게 아니라 — <b>판단할 그림이 없었을 뿐</b>입니다.',
+    { // 2. 통찰(전환) — 리스트 vs 한 판
+      kick:'같은 정보, 다른 그림', kc:'',
+      title:'리스트는 계산해야 보이고,<br>한 판은 그냥 보입니다',
+      body:'이름만 줄선 접수목록은 <span class="hlw">한 줄씩 머리로</span> 풀어야 합니다. 한 판으로 깔면 <span class="hl">눈에 바로</span> 들어옵니다.',
       vis:'<div class="sb-split">'+
             '<div class="sb-half b"><h4>리스트로 보면</h4>'+messyList()+'</div>'+
             '<div class="sb-arrow">→</div>'+
             '<div class="sb-half a"><h4>한 판으로 보면</h4>'+miniBoard({})+'</div>'+
           '</div>'
     },
-    { // 전 / Solution reveal
-      kick:'그래서 만든 것', kc:'good',
+    { // 3. 해결 — 무엇을 보여주나
+      kick:'한 화면이 보여주는 것', kc:'good',
       title:'6개 체어를, 하나의 타임라인으로',
-      body:'<b>누가</b>(색) · <b>무슨 진료</b> · <b>언제 끝날지</b>(블록 길이) · <b>지금 어디까지</b>(지금 선) 가 한 화면에. 원장 줄의 <span class="hl">빈칸은 “마취 하나 끼워넣을 틈”</span>, 같은 색이 두 체어에 겹치면 <span class="hlw">“그 원장 과부하”</span>가 저절로 떠오릅니다.',
+      body:'<b>누가</b>(색) · <b>뭘</b> · <b>언제 끝날지</b>(블록 길이)가 한눈에. 빈칸은 <span class="hl">"끼워넣을 틈"</span>, 같은 색이 겹치면 <span class="hlw">"그 원장 과부하"</span>.',
       vis:miniBoard({free:true})
     },
-    { // 결 / Benefits (feature→benefit, AIDA desire)
-      kick:'이게 진료실에 있으면', kc:'good',
-      title:'판단이 빨라지면, 같은 시간에 더 봅니다',
+    { // 4. 이득 + CTA
+      kick:'그래서 좋은 점', kc:'good',
+      title:'빈 시간이 줄면,<br>같은 시간에 더 봅니다',
       body:'',
       vis:'<ul class="sb-ben">'+
-        '<li><span class="ic">✓</span><span><b>빈 체어·빈 손이 바로 보임</b> → 환자 호출이 안 밀립니다</span></li>'+
-        '<li><span class="ic">✓</span><span><b>과부하·겹침 자동 경고</b> → 한 원장에 몰리기 전에 분산</span></li>'+
-        '<li><span class="ic">✓</span><span><b>신환·시간약속·지연 한눈에</b> → 놓쳐서 사과할 일이 줄어듦</span></li>'+
-        '<li><span class="ic">✓</span><span><b>실장이 머리로 추적 안 해도 됨</b> → 데스크가 덜 지칩니다</span></li>'+
-        '<li><span class="ic">✓</span><span class="pay">결국: 빈 시간이 줄어 = 같은 인력·같은 시간에 매출이 더.</span></li>'+
-        '</ul>'
-    },
-    { // 결 / CTA (action)
-      kick:'말로는 그저 그렇고, 보면 압니다', kc:'',
-      title:'지금 11:42 진료실, 그대로 옮겨놨습니다',
-      body:'아래 현황판은 실제 진료실을 옮긴 <b>살아있는 데모</b>입니다. 지금 선이 흐르고 남은 시간이 줄어듭니다. <span class="hl">읽는 법</span>이 궁금하면, 우측 상단 “가이드투어 시작하기”를 눌러보세요.',
-      vis:miniBoard({free:true,over:true}),
+        '<li><span class="ic">✓</span><span><b>빈 체어·빈 손이 바로</b> → 환자 호출이 안 밀림</span></li>'+
+        '<li><span class="ic">✓</span><span><b>과부하·겹침 자동 경고</b> → 한 원장에 몰리기 전 분산</span></li>'+
+        '<li><span class="ic">✓</span><span><b>신환·시간약속·지연 한눈에</b> → 놓쳐 사과할 일이 줄어듦</span></li>'+
+        '<li><span class="ic">✓</span><span class="pay">결국 — 같은 인력·같은 시간에 매출이 더.</span></li>'+
+        '</ul>',
       cta:'현황판 보기 →'
     }
   ];
@@ -238,6 +222,7 @@
       '<div class="sb-vis">'+(s.vis||'')+'</div>';
     // restart entry animation
     stage.style.animation='none'; void stage.offsetWidth; stage.style.animation='';
+    stage.scrollTop=0;
     Array.prototype.forEach.call(dots.children,function(el,idx){
       el.className='sb-dot'+(idx===i?' on':idx<i?' done':'');
     });
