@@ -5,483 +5,131 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>AI 시대 EMR 철학 — 차트 제작 기록</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system,'Apple SD Gothic Neo','Pretendard','Noto Sans KR',sans-serif;
-    background: #f4f6f9;
-    color: #1a1a2e;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  /* ── Top Nav ── */
-  nav {
-    position: sticky; top: 0; z-index: 100;
-    height: 52px; background: #fff;
-    border-bottom: 1px solid #e8eaed;
-    display: flex; align-items: center;
-    padding: 0 20px; gap: 12px;
-  }
-  nav .back-btn {
-    display: flex; align-items: center; gap: 6px;
-    color: #555; text-decoration: none; font-size: 13px;
-    padding: 5px 10px; border-radius: 8px; transition: background .15s;
-  }
-  nav .back-btn:hover { background: #f0f2f5; }
-  nav .nav-title { font-size: 14px; font-weight: 600; letter-spacing: -0.4px; }
-  nav .nav-sub { font-size: 12px; color: #888; margin-left: auto; }
-
-  .wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 60px; }
-
-  .emr-guide-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: #ede9fe; color: #6d28d9;
-    font-size: 11px; font-weight: 700; padding: 4px 10px;
-    border-radius: 20px; letter-spacing: 0.3px; margin-bottom: 12px;
-  }
-  .emr-guide-title { font-size: 25px; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 10px; line-height: 1.3; }
-  .emr-guide-title em { font-style: normal; color: #6d28d9; }
-  .emr-guide-sub { font-size: 14px; color: #555; margin-bottom: 22px; line-height: 1.75; }
-  .emr-guide-sub b { color: #1a1a2e; font-weight: 700; }
-  .emr-guide-sub .scroll-word { color: #d32f2f; font-weight: 700; }
-
-  /* ── 핵심 한 문장 배너 ── */
-  .principle {
-    display: flex; gap: 12px; align-items: flex-start;
-    background: linear-gradient(180deg,#fbfaff,#f4f0ff);
-    border: 1px solid #e4dcfb; border-left: 4px solid #7c3aed;
-    border-radius: 12px; padding: 15px 17px; margin-bottom: 14px;
-  }
-  .principle .p-ic { font-size: 18px; line-height: 1.4; }
-  .principle .p-tx { font-size: 13.5px; line-height: 1.7; color: #2a2342; }
-  .principle .p-tx b { color: #6d28d9; }
-  .grid-hint { font-size: 12px; color: #999; margin: 18px 0 8px; font-weight: 600; }
-
-  /* ── 바둑판 버튼 그리드 (가로 나열) ── */
-  .guide-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
-    gap: 12px; margin-top: 6px;
-  }
-  .guide-card {
-    background: #fff; border: 1.5px solid #e8eaed; border-radius: 14px;
-    padding: 15px 15px 13px; cursor: pointer; text-align: left;
-    display: flex; flex-direction: column; gap: 7px; min-height: 150px;
-    transition: transform .16s, box-shadow .16s, border-color .16s;
-    font-family: inherit; color: inherit;
-  }
-  .guide-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 30px rgba(0,0,0,.12); border-color: #1a1a2e;
-  }
-  .guide-card .gc-icon {
-    width: 38px; height: 38px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: 800; flex-shrink: 0;
-  }
-  .guide-card .gc-icon.blue   { background: #e8f0fe; color: #1565C0; }
-  .guide-card .gc-icon.green  { background: #e8f5e9; color: #2e7d32; }
-  .guide-card .gc-icon.orange { background: #fff3e0; color: #e65100; }
-  .guide-card .gc-icon.red    { background: #fdecec; color: #d32f2f; }
-  .guide-card .gc-icon.teal   { background: #e0f2f1; color: #00897b; }
-  .guide-card .gc-icon.purple { background: #f3e8ff; color: #7c3aed; }
-  .guide-card .gc-name { font-size: 14px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.35; color: #1a1a2e; }
-  .guide-card .gc-name .x { color: #d32f2f; }
-  .guide-card .gc-sub  { font-size: 11.5px; color: #888; line-height: 1.5; }
-  .guide-card .gc-open {
-    margin-top: auto; font-size: 12px; font-weight: 700; color: #6d28d9;
-    display: flex; align-items: center; gap: 4px;
-  }
-
-  /* ── 상세 모달 공통 ── */
-  .emr-section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-right: 30px; }
-  .emr-section-icon {
-    width: 40px; height: 40px; border-radius: 11px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; font-weight: 800; flex-shrink: 0;
-  }
-  .emr-section-icon.blue { background: #e8f0fe; color: #1565C0; }
-  .emr-section-icon.green { background: #e8f5e9; color: #2e7d32; }
-  .emr-section-icon.orange { background: #fff3e0; color: #e65100; }
-  .emr-section-icon.red { background: #fdecec; color: #d32f2f; }
-  .emr-section-icon.teal { background: #e0f2f1; color: #00897b; }
-  .emr-section-icon.purple { background: #f3e8ff; color: #7c3aed; }
-  .emr-section-name { font-size: 16.5px; font-weight: 800; letter-spacing: -0.4px; color: #1a1a2e; }
-  .emr-section-name .x { color: #d32f2f; }
-  .emr-section-en { font-size: 11.5px; color: #888; font-weight: 500; display: block; margin-top: 2px; }
-
-  .emr-body {
-    font-size: 13.5px; line-height: 1.8; color: #333;
-    background: #f8f9fb; border-radius: 10px; padding: 18px 20px;
-  }
-  .emr-body strong { color: #1a1a2e; font-weight: 700; }
-  .emr-body .lead-bad { color: #c62828; font-weight: 700; }
-  .emr-body .lead-good { color: #2e7d32; font-weight: 700; }
-  .emr-tag {
-    display: inline-block; background: #ede9fe; color: #6d28d9;
-    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
-    margin-right: 4px; margin-bottom: 4px;
-  }
-  .emr-tag.red { background: #fdecec; color: #d32f2f; }
-  .emr-tag.green { background: #e8f5e9; color: #2e7d32; }
-
-  .emr-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
-  .emr-compare-box { background: #fff; border: 1px solid #e8eaed; border-radius: 8px; padding: 12px 14px; }
-  .emr-compare-box .cb-label { font-size: 11px; font-weight: 700; margin-bottom: 6px; }
-  .emr-compare-box .cb-val { font-size: 12.5px; line-height: 1.65; color: #333; }
-  .emr-compare-box.bad { border-color: #ffcdd2; background: #fff8f8; }
-  .emr-compare-box.bad .cb-label { color: #c62828; }
-  .emr-compare-box.good { border-color: #c8e6c9; background: #f9fff9; }
-  .emr-compare-box.good .cb-label { color: #2e7d32; }
-
-  .fix-link {
-    display: inline-flex; align-items: center; gap: 5px;
-    margin-top: 4px; font-size: 12.5px; font-weight: 700; color: #6d28d9;
-    text-decoration: none; background: #f3effe; padding: 6px 11px; border-radius: 8px;
-  }
-  .fix-link:hover { background: #e9e0fc; }
-
-  /* 근거 박스 */
-  .evi {
-    margin-top: 14px; font-size: 11.5px; color: #6a6a78;
-    background: #fbfbfd; border: 1px solid #ececf2; border-radius: 9px;
-    padding: 11px 13px; line-height: 1.65;
-  }
-  .evi b { color: #44444f; }
-
-  /* 페이지 하단 출처 */
-  .sources {
-    margin-top: 26px; font-size: 11px; color: #9aa0aa; line-height: 1.7;
-    border-top: 1px solid #e8eaed; padding-top: 16px;
-  }
-  .sources a { color: #8a90a0; }
-
-  /* ── 상세 모달 틀 ── */
-  .g-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,.55); z-index: 1000;
-    justify-content: center; align-items: flex-start;
-    padding: 24px 16px; overflow-y: auto;
-  }
-  .g-overlay.open { display: flex; }
-  .g-modal {
-    display: none; background: #fff; border-radius: 18px;
-    width: 100%; max-width: 680px; margin: auto;
-    padding: 30px 28px 34px; position: relative;
-    box-shadow: 0 16px 56px rgba(0,0,0,.28);
-  }
-  .g-modal.open { display: block; }
-  .g-close {
-    position: absolute; top: 16px; right: 16px;
-    width: 32px; height: 32px; border-radius: 50%;
-    background: #f0f2f5; border: none; cursor: pointer;
-    font-size: 15px; color: #555;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .g-close:hover { background: #e0e3e8; }
-
-  .vm-chain {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-    margin: 12px 0 4px; padding: 14px; border-radius: 10px;
-    background: #fff; border: 1px solid #e8eaed;
-  }
-  .vm-step { font-size: 12.5px; font-weight: 700; padding: 6px 11px; border-radius: 8px; white-space: nowrap; }
-  .vm-arr { color: #c2c9d4; font-size: 14px; flex-shrink: 0; }
-
-  @media (max-width: 560px) {
-    .emr-compare { grid-template-columns: 1fr; }
-    .principle { flex-direction: column; gap: 6px; }
-  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,'Apple SD Gothic Neo','Pretendard','Noto Sans KR',sans-serif; background:#f4f6f9; color:#1a1a2e; -webkit-font-smoothing:antialiased; }
+  nav { position:sticky; top:0; z-index:100; height:52px; background:#fff; border-bottom:1px solid #e8eaed; display:flex; align-items:center; padding:0 20px; gap:12px; }
+  nav .back-btn { display:flex; align-items:center; gap:6px; color:#555; text-decoration:none; font-size:13px; padding:5px 10px; border-radius:8px; }
+  nav .back-btn:hover { background:#f0f2f5; }
+  nav .nav-title { font-size:14px; font-weight:600; letter-spacing:-.4px; }
+  nav .nav-sub { font-size:12px; color:#888; margin-left:auto; }
+  .wrap { max-width:820px; margin:0 auto; padding:32px 20px 60px; }
+  .badge { display:inline-flex; align-items:center; gap:6px; background:#ede9fe; color:#6d28d9; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; letter-spacing:.3px; margin-bottom:12px; }
+  h1.title { font-size:26px; font-weight:800; letter-spacing:-.8px; margin-bottom:10px; line-height:1.3; }
+  h1.title em { font-style:normal; color:#6d28d9; }
+  .sub { font-size:14.5px; color:#555; margin-bottom:22px; line-height:1.78; }
+  .sub b { color:#1a1a2e; font-weight:700; }
+  .sub .scroll-word { color:#d32f2f; font-weight:700; }
+  .principle { display:flex; gap:12px; align-items:flex-start; background:linear-gradient(180deg,#fbfaff,#f4f0ff); border:1px solid #e4dcfb; border-left:4px solid #7c3aed; border-radius:12px; padding:15px 17px; margin-bottom:18px; }
+  .principle .p-ic { font-size:18px; line-height:1.4; }
+  .principle .p-tx { font-size:13.5px; line-height:1.7; color:#2a2342; }
+  .principle .p-tx b { color:#6d28d9; }
+  .grid-hint { font-size:12px; color:#999; margin:6px 0 10px; font-weight:600; }
+  .guide-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:12px; }
+  .guide-card { background:#fff; border:1.5px solid #e8eaed; border-radius:14px; padding:15px 15px 13px; cursor:pointer; text-align:left; display:flex; flex-direction:column; gap:7px; min-height:150px; transition:transform .16s, box-shadow .16s, border-color .16s; color:inherit; text-decoration:none; }
+  .guide-card:hover { transform:translateY(-4px); box-shadow:0 12px 30px rgba(0,0,0,.12); border-color:#1a1a2e; }
+  .guide-card .gc-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .guide-card .gc-name { font-size:14px; font-weight:800; letter-spacing:-.5px; line-height:1.35; color:#1a1a2e; }
+  .guide-card .gc-name .x { color:#d32f2f; }
+  .guide-card .gc-sub { font-size:11.5px; color:#888; line-height:1.5; }
+  .guide-card .gc-open { margin-top:auto; font-size:12px; font-weight:700; display:flex; align-items:center; gap:4px; }
+  .sources { margin-top:26px; font-size:11px; color:#9aa0aa; line-height:1.7; border-top:1px solid #e8eaed; padding-top:16px; }
+  .sources a { color:#8a90a0; }
 </style>
 </head>
 <body>
-
 <nav>
   <a class="back-btn" href="차트제작과정.html">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     제작과정 보드로
   </a>
   <span style="color:#d0d5dd;font-size:14px;">|</span>
   <span class="nav-title">AI 시대 EMR 철학</span>
   <span class="nav-sub">전자차트 제작 기록 · 서울사계절치과</span>
 </nav>
-
 <div class="wrap">
-
-  <div class="emr-guide-badge">&#129517; AI 시대 EMR 철학</div>
-  <div class="emr-guide-title">좋은 차트는 <em>&lsquo;찾는&rsquo;</em> 게 아니라 <em>&lsquo;보이는&rsquo;</em> 것이다.</div>
-  <div class="emr-guide-sub">
-    기존 전자차트(EMR)는 환자 한 명을 파악하려고 <span class="scroll-word">드르륵드르륵</span> 스크롤한다. 메모, 처방, 사진, 과거 치료 &mdash; 정보는 다 있는데 <b>안 보인다</b>. 뭐 하나 찾으려고 위아래로 한참 헤맨다.<br><br>
-    <b>AI 시대 차트는 반대여야 한다.</b> 보면 바로 보이고(검색이 아니라 한눈에), 쌓인 기록이 알아서 일한다(리콜 대상·미완료 치료를 스스로 찾아냄). 아래는 우리가 차트를 만들며 <b>일부러 피한 안티패턴 6가지</b> &mdash; 전부 <span class="scroll-word">&lsquo;~하면 안 됩니다&rsquo;</span>.
+  <div class="badge">&#129517; AI 시대 EMR 철학</div>
+  <h1 class="title">좋은 차트는 <em>&lsquo;찾는&rsquo;</em> 게 아니라 <em>&lsquo;보이는&rsquo;</em> 것이다.</h1>
+  <div class="sub">
+    기존 전자차트(EMR)는 환자 한 명을 파악하려고 <span class="scroll-word">드르륵드르륵</span> 스크롤한다. 정보는 다 있는데 <b>안 보인다</b>.<br>
+    <b>AI 시대 차트는 반대여야 한다.</b> 보면 바로 보이고, 쌓인 기록이 알아서 일한다. 아래는 우리가 일부러 피한 <b>안티패턴 9가지</b> — 전부 <span class="scroll-word">&lsquo;~하면 안 됩니다&rsquo;</span>.
   </div>
-
   <div class="principle">
     <span class="p-ic">&#128161;</span>
-    <span class="p-tx">설계 원칙 한 줄: <b>사람이 머릿속에서 다시 짜맞추게 만들지 마라.</b> 위치는 위치로 보여주고, 인과는 사슬로 잇고, 위험은 항상 같은 자리에 띄우고, 데이터는 기계가 읽게 쌓는다.</span>
+    <span class="p-tx">설계 원칙 한 줄: <b>사람이 머릿속에서 다시 짜맞추게 만들지 마라.</b> 위치는 위치로 보여주고, 인과는 사슬로 잇고, 위험은 항상 같은 자리에, 데이터는 기계가 읽게 쌓는다.</span>
   </div>
-
-  <div class="grid-hint">&#128073; 각 칸을 눌러 &lsquo;왜 안 되는지 &middot; 우리는 어떻게 했는지&rsquo;를 펼쳐 보세요.</div>
-
-  <!-- 바둑판 안티패턴 6종 -->
+  <div class="grid-hint">&#128073; 각 칸을 누르면 &lsquo;왜 안 되는지 · 우리는 어떻게 했는지&rsquo;를 차분히 풀어 쓴 페이지로 들어갑니다.</div>
   <div class="guide-grid">
 
-    <button class="guide-card" data-modal="m-scroll">
-      <div class="gc-icon red">&#128202;</div>
-      <div class="gc-name">끝없이 <span class="x">스크롤</span>하게<br>하면 안 됩니다</div>
-      <div class="gc-sub">5년 기록을 찾으려 드르륵 내리는 차트 &rarr; 한 화면에</div>
-      <div class="gc-open">왜 &middot; 어떻게 &#10142;</div>
-    </button>
+    <a class="guide-card" href="emr-철학/01-scroll.html">
+      <div class="gc-icon" style="background:#fdecec;color:#d32f2f;">📊</div>
+      <div class="gc-name">끝없이 <span class="x">스크롤</span>하게 하면 안 됩니다</div>
+      <div class="gc-sub">5년 기록을 찾으려 드르륵 내리는 차트 → 한 화면에</div>
+      <div class="gc-open" style="color:#d32f2f;">왜 · 어떻게 &#10142;</div>
+    </a>
 
-    <button class="guide-card" data-modal="m-tooth">
-      <div class="gc-icon teal">&#129463;</div>
-      <div class="gc-name">위치를 <span class="x">글자</span>로<br>쓰면 안 됩니다</div>
-      <div class="gc-sub">&lsquo;#26&rsquo; &rarr; &lsquo;왼쪽 위 어금니&rsquo; 번역하는 한 박자</div>
-      <div class="gc-open">왜 &middot; 어떻게 &#10142;</div>
-    </button>
+    <a class="guide-card" href="emr-철학/02-tooth.html">
+      <div class="gc-icon" style="background:#e0f2f1;color:#00897b;">🦷</div>
+      <div class="gc-name">위치를 <span class="x">글자</span>로만 쓰면 안 됩니다</div>
+      <div class="gc-sub">‘#26’ → ‘왼쪽 위 어금니’ 번역하는 한 박자</div>
+      <div class="gc-open" style="color:#00897b;">왜 · 어떻게 &#10142;</div>
+    </a>
 
-    <button class="guide-card" data-modal="m-causal">
-      <div class="gc-icon blue">&#128279;</div>
+    <a class="guide-card" href="emr-철학/03-causal.html">
+      <div class="gc-icon" style="background:#e8f0fe;color:#1565C0;">🔗</div>
       <div class="gc-name">왜 했는지 <span class="x">흩어</span>놓으면 안 됩니다</div>
-      <div class="gc-sub">날짜순 나열로 인과가 끊김 &rarr; 사슬로</div>
-      <div class="gc-open">왜 &middot; 어떻게 &#10142;</div>
-    </button>
+      <div class="gc-sub">날짜순 나열로 인과가 끊김 → 사슬로</div>
+      <div class="gc-open" style="color:#1565C0;">왜 · 어떻게 &#10142;</div>
+    </a>
 
-    <button class="guide-card" data-modal="m-overload">
-      <div class="gc-icon green">&#127754;</div>
-      <div class="gc-name">다 펼쳐서 <span class="x">쏟으면</span><br>안 됩니다</div>
-      <div class="gc-sub">모든 정보를 한꺼번에 &rarr; 요약 1줄 + 펼침</div>
-      <div class="gc-open">왜 &middot; 어떻게 &#10142;</div>
-    </button>
+    <a class="guide-card" href="emr-철학/04-overload.html">
+      <div class="gc-icon" style="background:#e8f5e9;color:#2e7d32;">🌊</div>
+      <div class="gc-name">다 펼쳐서 <span class="x">쏟으면</span> 안 됩니다</div>
+      <div class="gc-sub">모든 정보를 한꺼번에 → 요약 1줄 + 펼침</div>
+      <div class="gc-open" style="color:#2e7d32;">왜 · 어떻게 &#10142;</div>
+    </a>
 
-    <button class="guide-card" data-modal="m-alert">
-      <div class="gc-icon orange">&#128680;</div>
-      <div class="gc-name">경고를 <span class="x">묻어</span>두면<br>안 됩니다</div>
-      <div class="gc-sub">알레르기&middot;전신질환이 본문에 파묻힘 &rarr; 빨강 한 줄</div>
-      <div class="gc-open">왜 &middot; 어떻게 &#10142;</div>
-    </button>
+    <a class="guide-card" href="emr-철학/05-clicks.html">
+      <div class="gc-icon" style="background:#eef0fe;color:#4f46e5;">🖱️</div>
+      <div class="gc-name">클릭을 <span class="x">많이</span> 하게 하면 안 됩니다</div>
+      <div class="gc-sub">한 가지 일에 화면 여러 번 전환 → 최소 클릭</div>
+      <div class="gc-open" style="color:#4f46e5;">왜 · 어떻게 &#10142;</div>
+    </a>
 
-    <button class="guide-card" data-modal="m-ai">
-      <div class="gc-icon purple">&#129302;</div>
-      <div class="gc-name"><span class="x">AI가 못 읽게</span><br>쌓으면 안 됩니다</div>
-      <div class="gc-sub">줄글 덩어리 &rarr; 구조화해야 자동으로 일함</div>
-      <div class="gc-open">왜 &middot; 어떻게 &#10142;</div>
-    </button>
+    <a class="guide-card" href="emr-철학/06-alert.html">
+      <div class="gc-icon" style="background:#fff3e0;color:#e65100;">🚨</div>
+      <div class="gc-name">알림을 <span class="x">남발</span>하면 안 됩니다</div>
+      <div class="gc-sub">사소한 알림 남발 → 진짜 경고도 무시됨</div>
+      <div class="gc-open" style="color:#e65100;">왜 · 어떻게 &#10142;</div>
+    </a>
 
+    <a class="guide-card" href="emr-철학/07-claim.html">
+      <div class="gc-icon" style="background:#fdf3e3;color:#b45309;">🧾</div>
+      <div class="gc-name">청구 누락을 <span class="x">사람</span>이 잡게 하면 안 됩니다</div>
+      <div class="gc-sub">차팅↔청구 따로 → 빠지면 차트가 먼저 알림</div>
+      <div class="gc-open" style="color:#b45309;">왜 · 어떻게 &#10142;</div>
+    </a>
+
+    <a class="guide-card" href="emr-철학/08-ai.html">
+      <div class="gc-icon" style="background:#f3e8ff;color:#7c3aed;">🤖</div>
+      <div class="gc-name">AI가 못 읽게<span class="x"> 쌓으면 안 됩니다</span></div>
+      <div class="gc-sub">줄글 덩어리 → 구조화해야 자동으로 일함</div>
+      <div class="gc-open" style="color:#7c3aed;">왜 · 어떻게 &#10142;</div>
+    </a>
+
+    <a class="guide-card" href="emr-철학/09-patient.html">
+      <div class="gc-icon" style="background:#fde7f1;color:#db2777;">👥</div>
+      <div class="gc-name">환자에게 <span class="x">못 보여주면</span> 안 됩니다</div>
+      <div class="gc-sub">약어·코드로만 된 화면 → 환자용 화면까지</div>
+      <div class="gc-open" style="color:#db2777;">왜 · 어떻게 &#10142;</div>
+    </a>
   </div>
-
   <div class="sources">
-    근거(의료 EMR/EHR 연구 &mdash; 치과에도 같은 원리 적용):
-    진료 1건당 EHR 사용 평균 16분, 그중 약 33%가 과거 기록 &lsquo;차트 읽기&rsquo;(<a href="https://pubmed.ncbi.nlm.nih.gov/31931523/" target="_blank">Overhage &amp; McCallie, 2020</a>) &middot;
-    1차진료는 30분 진료에 EHR 36분, 퇴근 후 &lsquo;파자마 타임&rsquo; 별도(<a href="https://www.ama-assn.org/practice-management/digital-health/primary-care-visits-run-half-hour-time-ehr-36-minutes" target="_blank">AMA</a>) &middot;
-    독감주사 1건 기록에 32번 클릭(<a href="https://psnet.ahrq.gov/primer/alert-fatigue" target="_blank">AHRQ PSNet</a>) &middot;
-    임상 알림 무시(override)율 46&ndash;96% = 알림 피로(<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7400042/" target="_blank">Systematic Review, 2020</a>).
+    근거(의료 EMR/EHR 연구 — 치과에도 같은 원리 적용):
+    진료 1건당 EHR 16분·차트리뷰 33%(<a href="https://pubmed.ncbi.nlm.nih.gov/31931523/" target="_blank">Overhage &amp; McCallie, 2020</a>) &middot;
+    독감주사 1건 기록에 32클릭·알림 피로(<a href="https://psnet.ahrq.gov/primer/alert-fatigue" target="_blank">AHRQ PSNet</a>) &middot;
+    임상 알림 무시율 46&ndash;96%(<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7400042/" target="_blank">체계적 문헌고찰, 2020</a>) &middot;
+    치과 청구 누락·차팅 이슈(<a href="https://www.dentalnews.or.kr/news/article.html?no=25705" target="_blank">치과신문</a>).
   </div>
-
 </div>
-
-<!-- 상세 모달들 -->
-<div class="g-overlay" id="g-overlay">
-
-  <!-- ① 끝없이 스크롤 -->
-  <div class="g-modal" id="m-scroll">
-    <button class="g-close" aria-label="닫기">&#10005;</button>
-    <div class="emr-section-header">
-      <div class="emr-section-icon red">&#128202;</div>
-      <div>
-        <div class="emr-section-name">끝없이 <span class="x">스크롤</span>하게 하면 안 됩니다</div>
-        <span class="emr-section-en">정보를 &lsquo;찾게&rsquo; 하지 말고 &lsquo;보이게&rsquo; 하라</span>
-      </div>
-    </div>
-    <div class="emr-body">
-      <span class="lead-bad">기존 EMR은 &mdash;</span> 환자 한 명을 파악하려면 방문 기록을 위에서 아래로 드르륵 스크롤한다. 화면은 한 번에 한 시점만 보여주고, 전체 그림은 보는 사람이 머릿속에서 다시 잇는다.
-      <div class="emr-compare">
-        <div class="emr-compare-box bad">
-          <div class="cb-label">&#10060; 이렇게 하면 안 됨</div>
-          <div class="cb-val">방문 20건이 세로로 길게 나열. &lsquo;이 환자 어디까지 치료했지?&rsquo;를 알려면 스크롤을 끝까지 내렸다가 다시 올린다.</div>
-        </div>
-        <div class="emr-compare-box good">
-          <div class="cb-label">&#9989; 우리 차트는</div>
-          <div class="cb-val">5년 치료를 <b>한 화면</b>에. 좌측 확대 + 가로 시간축(간트 막대)로 스크롤 없이 전체 흐름이 한눈에.</div>
-        </div>
-      </div>
-      <strong>왜 문제인가:</strong> 진료 1건당 의료진은 EHR에 평균 <b>16분</b>을 쓰고, 그중 약 <b>33%</b>가 과거 기록을 뒤지는 &lsquo;차트 읽기&rsquo;다. 한 화면에 안 보이면 그 시간은 계속 늘어난다.
-      <span class="emr-tag red">스크롤 = 시간 손실</span> <span class="emr-tag red">전체 그림 누락</span>
-      <a class="fix-link" href="차트확인.html" target="_blank">&#128202; 실제 EMR 3열 차트 보기 &#10142;</a>
-      <div class="evi"><b>근거:</b> Overhage &amp; McCallie(2020) 진료당 EHR 16분·차트리뷰 33% &middot; AMA: 30분 진료에 EHR 36분.</div>
-    </div>
-  </div>
-
-  <!-- ② 위치를 글자로 -->
-  <div class="g-modal" id="m-tooth">
-    <button class="g-close" aria-label="닫기">&#10005;</button>
-    <div class="emr-section-header">
-      <div class="emr-section-icon teal">&#129463;</div>
-      <div>
-        <div class="emr-section-name">위치를 <span class="x">글자</span>로 쓰면 안 됩니다</div>
-        <span class="emr-section-en">&lsquo;어디&rsquo;는 즉시 기억 &mdash; 번호로 쓰면 한 박자 늦는다</span>
-      </div>
-    </div>
-    <div class="emr-body">
-      <span class="lead-bad">기존 EMR은 &mdash;</span> 치아를 <b>&lsquo;#26 레진&rsquo;</b>처럼 번호로만 적는다. 보는 사람은 매번 &lsquo;#26 = 왼쪽 위 큰어금니&rsquo;로 머릿속에서 번역해야 한다. 이 번역이 한 박자 지연을 만든다.
-      <div class="emr-compare">
-        <div class="emr-compare-box bad">
-          <div class="cb-label">&#10060; 이렇게 하면 안 됨</div>
-          <div class="cb-val">&lsquo;#26 #36 #47 치료함&rsquo; &mdash; 어느 자리인지 떠올리느라 시선이 멈춘다. 환자에게 설명할 때도 한 번 더 번역.</div>
-        </div>
-        <div class="emr-compare-box good">
-          <div class="cb-label">&#9989; 우리 차트는</div>
-          <div class="cb-val">실제 <b>입 모양</b> 위에 그 치아를 색칠. 보면 바로 &lsquo;거기&rsquo;. 위치를 위치로 보여준다.</div>
-        </div>
-      </div>
-      <strong>왜 문제인가:</strong> 공간(어디)은 사람이 즉시 떠올리는 정보인데, 글자는 의미를 해독하는 단계를 한 번 더 거치게 만든다. &lsquo;어디&rsquo;를 글자로 옮기면 그 강점을 버리는 셈(내부 원칙 INV-7).
-      <span class="emr-tag green">위치는 위치로</span> <span class="emr-tag green">번역 지연 0</span>
-      <a class="fix-link" href="참고자료/v_B_tooth.html" target="_blank">&#128512; 입 위치 색칠 시안 보기 &#10142;</a>
-    </div>
-  </div>
-
-  <!-- ③ 인과 흩어놓기 -->
-  <div class="g-modal" id="m-causal">
-    <button class="g-close" aria-label="닫기">&#10005;</button>
-    <div class="emr-section-header">
-      <div class="emr-section-icon blue">&#128279;</div>
-      <div>
-        <div class="emr-section-name">왜 했는지 <span class="x">흩어</span>놓으면 안 됩니다</div>
-        <span class="emr-section-en">날짜순 나열 대신 인과 사슬(증상&rarr;진단&rarr;처치&rarr;결과)</span>
-      </div>
-    </div>
-    <div class="emr-body">
-      <span class="lead-bad">기존 EMR은 &mdash;</span> 레진 / 신경치료 / 스케일링 / 크라운이 여러 치아에 걸쳐 <b>날짜순으로 뒤섞여</b> 나열된다. &lsquo;#36을 왜 신경치료까지 갔지?&rsquo;를 알려면 흩어진 줄을 머릿속에서 다시 짜맞춰야 한다.
-      <div class="vm-chain">
-        <span class="vm-step" style="background:#fce7f3;color:#db2777;">&#128483; 증상 CC</span>
-        <span class="vm-arr">&#10142;</span>
-        <span class="vm-step" style="background:#ffedd5;color:#ea580c;">&#128300; 검사 PI</span>
-        <span class="vm-arr">&#10142;</span>
-        <span class="vm-step" style="background:#fef9c3;color:#a16207;">&#128269; 진단</span>
-        <span class="vm-arr">&#10142;</span>
-        <span class="vm-step" style="background:#dbeafe;color:#2563eb;">&#128137; 처치</span>
-        <span class="vm-arr">&#10142;</span>
-        <span class="vm-step" style="background:#f3e8ff;color:#7c3aed;">&#9197; 결과&middot;예정</span>
-      </div>
-      <span class="lead-good">우리 차트는 &mdash;</span> 같은 치아(또는 임상 문제)끼리 묶어, <b>#36 시림(증상) &rarr; 검사 &rarr; 비가역적 치수염(진단) &rarr; 근관치료 &rarr; 크라운</b>을 한 사슬로 잇는다. &lsquo;왜 이 치료를 했나&rsquo;가 한 줄로 읽힌다.
-      <span class="emr-tag">인과 한눈에</span> <span class="emr-tag">&lsquo;왜 했나&rsquo; 추적</span>
-      <a class="fix-link" href="참고자료/05_vmodel.html" target="_blank">&#128279; 인과사슬(V-모델) 시안 보기 &#10142;</a>
-    </div>
-  </div>
-
-  <!-- ④ 다 펼쳐 쏟기 -->
-  <div class="g-modal" id="m-overload">
-    <button class="g-close" aria-label="닫기">&#10005;</button>
-    <div class="emr-section-header">
-      <div class="emr-section-icon green">&#127754;</div>
-      <div>
-        <div class="emr-section-name">다 펼쳐서 <span class="x">쏟으면</span> 안 됩니다</div>
-        <span class="emr-section-en">요약 1줄을 기본으로, 필요한 행만 펼친다</span>
-      </div>
-    </div>
-    <div class="emr-body">
-      <span class="lead-bad">기존 EMR은 &mdash;</span> 모든 메모&middot;처방&middot;영상&middot;수치를 항상 펼쳐 화면을 가득 덮는다. 정작 지금 필요한 한 줄이 정보 더미에 파묻힌다.
-      <div class="emr-compare">
-        <div class="emr-compare-box bad">
-          <div class="cb-label">&#10060; 이렇게 하면 안 됨</div>
-          <div class="cb-val">한 방문에 메모 10줄 + 처방 + 방사선 설명까지 전부 펼침 &times; 20방문 = 끝없는 벽.</div>
-        </div>
-        <div class="emr-compare-box good">
-          <div class="cb-label">&#9989; 우리 차트는</div>
-          <div class="cb-val">기본은 <b>날짜&middot;치아&middot;술식</b> 요약 한 줄. 궁금한 행만 클릭해 메모&middot;처방&middot;사진을 펼침(확장행).</div>
-        </div>
-      </div>
-      <strong>왜 문제인가:</strong> 사람 시선은 &lsquo;전체 훑기 &rarr; 관심 항목만 파기&rsquo; 순으로 움직인다. 다 펼쳐 두면 뇌가 필요 없는 걸 걸러내는 데 에너지를 낭비한다.
-      <span class="emr-tag green">정보 과부하 차단</span> <span class="emr-tag green">스캔 속도 향상</span>
-      <a class="fix-link" href="참고자료/2_확장행.html" target="_blank">&#127754; 확장행 시안 보기 &#10142;</a>
-    </div>
-  </div>
-
-  <!-- ⑤ 경고 묻어두기 -->
-  <div class="g-modal" id="m-alert">
-    <button class="g-close" aria-label="닫기">&#10005;</button>
-    <div class="emr-section-header">
-      <div class="emr-section-icon orange">&#128680;</div>
-      <div>
-        <div class="emr-section-name">경고를 <span class="x">묻어</span>두면 안 됩니다</div>
-        <span class="emr-section-en">위험 정보는 찾게 하지 말고, 항상 같은 자리에 띄운다</span>
-      </div>
-    </div>
-    <div class="emr-body">
-      <span class="lead-bad">기존 EMR은 &mdash;</span> 알레르기&middot;전신질환&middot;항응고제 복용 같은 위험 정보가 일반 메모 속에 섞여 <b>묻힌다</b>. 반대로 사소한 알림을 너무 자주 띄우면, 의료진이 알림의 <b>46&ndash;96%</b>를 습관적으로 무시한다(알림 피로) &mdash; 그러다 진짜 경고도 같이 흘려보낸다.
-      <div class="emr-compare">
-        <div class="emr-compare-box bad">
-          <div class="cb-label">&#10060; 이렇게 하면 안 됨</div>
-          <div class="cb-val">&lsquo;당뇨&middot;와파린 복용&rsquo;이 3년 전 메모 다섯째 줄에. 발치 직전에 못 보면 사고로 이어짐.</div>
-        </div>
-        <div class="emr-compare-box good">
-          <div class="cb-label">&#9989; 우리 차트는</div>
-          <div class="cb-val">전신질환&middot;주의는 화면 <b>상단 빨강 한 줄</b>로 항상 고정. 알림은 적게, 진짜 중요한 것만.</div>
-        </div>
-      </div>
-      <strong>왜 문제인가:</strong> 위험 정보를 &lsquo;찾아서&rsquo; 봐야 하면 이미 늦다. 항상 같은 자리, 강한 색으로 고정해야 놓치지 않는다. 알림은 많을수록 무시당한다 &mdash; 적게, 강하게.
-      <span class="emr-tag red">알림 피로 방지</span> <span class="emr-tag red">위험은 항상 같은 자리</span>
-      <a class="fix-link" href="차트확인.html" target="_blank">&#128680; 전신질환 빨강 줄 적용 차트 &#10142;</a>
-      <div class="evi"><b>근거:</b> 임상 알림 override율 46&ndash;96%(체계적 문헌고찰, 2020) &middot; AHRQ PSNet: 알림 피로 &mdash; 과잉 알림이 중요한 경고까지 무력화.</div>
-    </div>
-  </div>
-
-  <!-- ⑥ AI가 못 읽게 쌓기 -->
-  <div class="g-modal" id="m-ai">
-    <button class="g-close" aria-label="닫기">&#10005;</button>
-    <div class="emr-section-header">
-      <div class="emr-section-icon purple">&#129302;</div>
-      <div>
-        <div class="emr-section-name"><span class="x">AI가 못 읽게</span> 쌓으면 안 됩니다</div>
-        <span class="emr-section-en">쌓인 기록이 자동으로 일하게 &mdash; 구조화가 핵심</span>
-      </div>
-    </div>
-    <div class="emr-body">
-      <span class="lead-bad">기존 EMR은 &mdash;</span> 모든 걸 자유 줄글로만 적는다. 사람도 나중에 다시 못 찾고, 기계는 더더욱 못 읽는다. 데이터는 쌓이는데 <b>아무 일도 하지 않는다.</b>
-      <div class="emr-compare">
-        <div class="emr-compare-box bad">
-          <div class="cb-label">&#10060; 이렇게 하면 안 됨</div>
-          <div class="cb-val">&lsquo;오늘 스케일링하고 다음에 또 보기로 함&rsquo; &mdash; 언제? 어느 치아? 무슨 결과? 기계가 읽을 칸이 없다.</div>
-        </div>
-        <div class="emr-compare-box good">
-          <div class="cb-label">&#9989; 우리 차트는</div>
-          <div class="cb-val">치아&middot;술식&middot;날짜&middot;결과를 <b>구조화(structured)</b>해 기록 &rarr; 리콜 대상&middot;미완료 치료를 차트가 스스로 찾아냄.</div>
-        </div>
-      </div>
-      <strong>왜 문제인가:</strong> AI 시대 EMR의 진짜 가치는 &lsquo;쌓인 데이터가 자동으로 일한다&rsquo;는 데 있다 &mdash; 리콜 대상 자동 식별, 보험 청구 더블체크, 미완료 치료 탐지. 비정형 줄글은 그 자동화를 막는 벽이다. <b>탐지(detection)가 먼저, 예후 예측은 그 다음</b>이다.
-      <span class="emr-tag">구조화 = 자동화의 연료</span> <span class="emr-tag">리콜&middot;청구 자동 점검</span>
-      <a class="fix-link" href="진행상황.html" target="_blank">&#129302; 리콜&middot;보험 자동화 진행상황 &#10142;</a>
-    </div>
-  </div>
-
-</div>
-
-<script>
-(function () {
-  var overlay = document.getElementById('g-overlay');
-  function openModal(id) {
-    var panel = document.getElementById(id);
-    if (!panel) return;
-    overlay.querySelectorAll('.g-modal').forEach(function (m) { m.classList.remove('open'); });
-    panel.classList.add('open');
-    overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-  function closeModal() {
-    overlay.classList.remove('open');
-    overlay.querySelectorAll('.g-modal').forEach(function (m) { m.classList.remove('open'); });
-    document.body.style.overflow = '';
-  }
-  document.querySelectorAll('.guide-card[data-modal]').forEach(function (btn) {
-    btn.addEventListener('click', function () { openModal(btn.getAttribute('data-modal')); });
-  });
-  overlay.querySelectorAll('.g-close').forEach(function (b) {
-    b.addEventListener('click', closeModal);
-  });
-  overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
-})();
-</script>
-
 </body>
 </html>

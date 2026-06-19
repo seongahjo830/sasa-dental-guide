@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>환자에게 못 보여주면 안 됩니다 — AI 시대 EMR 철학</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,'Apple SD Gothic Neo','Pretendard','Noto Sans KR',sans-serif; background:#FBFAF7; color:#22232a; -webkit-font-smoothing:antialiased; line-height:1.85; }
+  nav { position:sticky; top:0; z-index:50; height:52px; background:rgba(251,250,247,.92); backdrop-filter:blur(8px);
+        border-bottom:1px solid #ece9e2; display:flex; align-items:center; padding:0 20px; gap:12px; }
+  nav a.back { display:flex; align-items:center; gap:6px; color:#6b6b75; text-decoration:none; font-size:13px; padding:5px 10px; border-radius:8px; }
+  nav a.back:hover { background:#f0eee8; }
+  nav .nt { font-size:13.5px; font-weight:600; color:#33343c; letter-spacing:-.3px; }
+  nav .ns { margin-left:auto; font-size:12px; color:#a7a59d; }
+  .wrap { max-width:680px; margin:0 auto; padding:44px 22px 72px; }
+  .eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; letter-spacing:.3px;
+             color:#db2777; background:#fde7f1; padding:5px 12px; border-radius:30px; margin-bottom:20px; }
+  .eyebrow .n { font-variant-numeric:tabular-nums; opacity:.7; }
+  h1 { font-size:30px; line-height:1.32; letter-spacing:-1px; font-weight:800; color:#1a1a22; margin-bottom:12px; }
+  h1 .x { color:#db2777; }
+  .tagline { font-size:16px; color:#6a6a73; line-height:1.7; margin-bottom:34px; font-weight:500; }
+  p.lead { font-size:19px; line-height:1.75; color:#2a2b33; margin:0 0 26px; letter-spacing:-.2px; }
+  p { font-size:17px; margin:0 0 20px; color:#33343c; }
+  p b, li b { color:#15151c; font-weight:700; }
+  h2 { font-size:14px; font-weight:800; letter-spacing:.4px; color:#9a988f; text-transform:uppercase; margin:38px 0 14px; }
+  .compare { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:8px 0 30px; }
+  .cbox { border-radius:14px; padding:18px 20px; font-size:15.5px; line-height:1.7; }
+  .cbox .lbl { font-size:12px; font-weight:800; letter-spacing:.3px; margin-bottom:9px; display:flex; align-items:center; gap:6px; }
+  .cbox.bad { background:#fdf3f3; border:1px solid #f6dada; }
+  .cbox.bad .lbl { color:#c0392b; }
+  .cbox.good { background:#f1f8f2; border:1px solid #d4e8d6; }
+  .cbox.good .lbl { color:#2e7d32; }
+  .cbox b { color:#15151c; }
+  .callout { border-radius:14px; padding:18px 20px; margin:8px 0 30px; font-size:15.5px; line-height:1.75; }
+  .callout.note { background:#f6f4fb; border:1px solid #e6e1f3; border-left:3px solid #4f46e5; color:#3a3640; }
+  .callout.evi  { background:#f7f6f2; border:1px solid #ece9e0; color:#6a685f; font-size:13.5px; line-height:1.7; }
+  .callout .ct { font-size:12px; font-weight:800; letter-spacing:.3px; margin-bottom:8px; color:#4f46e5; }
+  .callout.evi .ct { color:#9a988f; }
+  .callout.evi a { color:#7c7a70; }
+  .ours { display:flex; flex-direction:column; gap:6px; margin:30px 0 8px; padding:20px 22px;
+          background:#fff; border:1px solid #ece9e2; border-radius:16px; box-shadow:0 1px 4px rgba(0,0,0,.03); }
+  .ours .ot { font-size:12px; font-weight:800; letter-spacing:.3px; color:#db2777; }
+  .ours .od { font-size:15.5px; color:#33343c; line-height:1.7; }
+  .ours a.btn { align-self:flex-start; margin-top:8px; display:inline-flex; align-items:center; gap:6px;
+                font-size:14.5px; font-weight:700; color:#fff; background:#db2777; text-decoration:none;
+                padding:10px 16px; border-radius:10px; }
+  .ours a.btn:hover { filter:brightness(.93); }
+  .pager { display:flex; justify-content:space-between; gap:12px; margin-top:48px; padding-top:24px; border-top:1px solid #ece9e2; }
+  .pager a { flex:1; text-decoration:none; padding:14px 16px; border-radius:12px; border:1px solid #ece9e2; background:#fff;
+             color:#33343c; font-size:13.5px; line-height:1.5; transition:border-color .15s, transform .15s; }
+  .pager a:hover { border-color:#db2777; transform:translateY(-2px); }
+  .pager a.next { text-align:right; }
+  .pager .pd { font-size:11px; color:#a7a59d; font-weight:700; margin-bottom:3px; }
+  .pager a.disabled { visibility:hidden; }
+  @media (max-width:560px){ .compare{grid-template-columns:1fr;} h1{font-size:25px;} p.lead{font-size:17.5px;} }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="back" href="../emr-가독성가이드.html">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    철학 목록으로
+  </a>
+  <span style="color:#d8d4cb;">|</span>
+  <span class="nt">AI 시대 EMR 철학</span>
+  <span class="ns">서울사계절치과</span>
+</nav>
+<div class="wrap">
+  <div class="eyebrow"><span>👥</span> <span class="n">09</span> · 안티패턴</div>
+  <h1>환자에게 <span class="x">못 보여주면</span> 안 됩니다</h1>
+  <div class="tagline">차트는 의료진만 보는 게 아니다 — 환자도 이해해야 한다</div>
+
+  <p class="lead">차트는 의료진만 보는 도구가 아니다. 환자가 자기 상태·계획·비용을 “이해”하게 만드는 것도 차트의 일이다.</p>
+
+  <h2>이렇게 하면 안 됩니다</h2>
+  <div class="compare">
+    <div class="cbox bad"><div class="lbl">❌ 흔한 차트</div>약어·코드·전문용어로만 된 화면은 환자 앞에서 띄울 수 없다. 그래서 설명은 매번 말로 다시, 직원마다 다르게 — 같은 치과인데 설명이 제각각이다.</div>
+    <div class="cbox good"><div class="lbl">✅ 우리 차트</div>같은 데이터를 <b>환자용</b>으로도 보여준다. 현재 상태(본인 구강 사진) → 필요한 치료 → 비용(보험/비보험) → 일정. 글은 줄이고 그림으로, 설명 편차는 0으로.</div>
+  </div>
+
+  <h2>왜 문제인가</h2>
+      <p>설명이 사람·상황마다 다르면 동의·신뢰·매출이 함께 흔들린다. 차트가 환자 화면까지 책임지면 설명이 한 번에 정렬된다.</p>
+      <p>환자가 “내 눈으로 본” 계획은 말로만 들은 계획보다 훨씬 잘 받아들여진다.</p>
+
+  <div class="callout note"><div class="ct">짚고 넘어가기 — 덴트웹은?</div>이건 대부분의 EMR이 비워둔 칸이다. 차트의 데이터를 환자가 이해하는 화면으로 “한 번 더” 보여주는 것 — 우리 차트의 분명한 차별점이다.</div>
+
+  <div class="ours">
+    <div class="ot">그래서 우리는 —</div>
+    <div class="od">말이 아니라 실제 화면으로 확인하세요.</div>
+    <a class="btn" href="../치료계획.html" target="_blank">👥 환자용 치료계획 화면 보기 &#10142;</a>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="08-ai.html"><div class="pd">← 이전</div>AI가 못 읽게 쌓으면 안 됩니다</a>
+    <a class="next" href="../emr-가독성가이드.html"><div class="pd">다음 →</div>9가지 한눈에 보기</a>
+  </div>
+</div>
+</body>
+</html>
