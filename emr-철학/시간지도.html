@@ -43,23 +43,30 @@
   .tm-now .tag { position:absolute; top:-18px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:800; color:#ef4444; background:#fff; padding:0 4px; white-space:nowrap; }
   .tm-future { position:absolute; top:30px; bottom:0; background:repeating-linear-gradient(135deg,#faf7ff,#faf7ff 6px,#f3effe 6px,#f3effe 12px); z-index:0; }
 
-  .tm-row { position:relative; display:flex; align-items:center; min-height:44px; }
+  .tm-row { position:relative; display:flex; align-items:center; min-height:58px; }
   .tm-row + .tm-row { border-top:1px dashed #f0ede5; }
   .tm-rlabel { width:118px; flex:none; padding-right:10px; }
   .tm-rlabel .pos { display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:800; }
   .tm-rlabel .posdot { width:9px; height:9px; border-radius:50%; flex:none; }
   .tm-rlabel .rname { font-size:11px; color:#8b897f; line-height:1.35; margin-top:1px; }
-  .tm-track { position:relative; flex:1; height:44px; }
+  .tm-track { position:relative; flex:1; height:58px; }
 
-  .tm-bar { position:absolute; top:50%; transform:translateY(-50%); height:18px; border-radius:9px; opacity:.9;
-            display:flex; align-items:center; min-width:18px; z-index:1; }
-  .tm-bar.dashed { background:transparent !important; border:1.5px dashed; opacity:.85; }
-  .tm-bar .blab { font-size:10.5px; font-weight:800; color:#fff; padding:0 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .tm-bar.dashed .blab { color:#5b21b6; }
-  .tm-dot { position:absolute; top:50%; transform:translate(-50%,-50%); width:15px; height:15px; border-radius:50%;
-            border:3px solid #fff; box-shadow:0 0 0 1.5px rgba(0,0,0,.08); z-index:2; cursor:pointer; }
+  .tm-bar { position:absolute; top:50%; transform:translateY(-50%); height:16px; border-radius:8px; opacity:.92;
+            display:flex; align-items:center; min-width:14px; z-index:1; }
+  .tm-bar.dashed { background:transparent !important; border:1.5px dashed; opacity:.9; }
+  .tm-bar .blab { font-size:10.5px; font-weight:800; color:#fff; padding:0 9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* 막대 위 작은 캡션 (짧은 막대용 — 충돌 없이 위쪽에) */
+  .tm-bcap { position:absolute; top:7px; font-size:10px; font-weight:800; white-space:nowrap; transform:translateX(0); z-index:2; }
+  .tm-dot { position:absolute; top:50%; transform:translate(-50%,-50%); width:16px; height:16px; border-radius:50%;
+            border:3px solid #fff; box-shadow:0 0 0 1.5px rgba(0,0,0,.1); z-index:3; cursor:pointer; transition:transform .12s; }
+  .tm-dot:hover, .tm-dot.hl { transform:translate(-50%,-50%) scale(1.32); z-index:5; }
   .tm-dot.flag::after { content:''; position:absolute; inset:-6px; border-radius:50%; border:1.5px solid #ef4444; opacity:.5; }
-  .tm-evlab { position:absolute; top:50%; transform:translateY(-50%); font-size:10px; color:#7b7970; white-space:nowrap; pointer-events:none; }
+  /* 호버/탭 툴팁 */
+  .tm-tip { position:fixed; z-index:260; background:#15151c; color:#fff; font-size:12px; font-weight:600; padding:8px 11px;
+            border-radius:9px; max-width:250px; line-height:1.5; box-shadow:0 8px 24px rgba(0,0,0,.28); pointer-events:none; opacity:0; transform:translateY(4px); transition:opacity .12s, transform .12s; }
+  .tm-tip.on { opacity:1; transform:translateY(0); }
+  .tm-tip .d { color:#a7a59d; font-weight:800; font-size:10.5px; display:block; margin-bottom:2px; }
+  .tm-tip .c { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:middle; }
 
   .legend { display:flex; flex-wrap:wrap; gap:10px 16px; margin:14px 0 4px 118px; padding-top:10px; border-top:1px solid #f0ede5; }
   .legend .li { display:flex; align-items:center; gap:6px; font-size:11.5px; color:#6a6a73; }
@@ -141,7 +148,7 @@
       <span class="who">🦷 환자 차트 — 시간축</span>
       <span class="meta">초진 2024.01 · 최근 집중치료 2026.04 · 오늘 2026.06.19</span>
     </div>
-    <div class="axisnote">↔ 가로축은 시간. 내원이 없던 긴 공백은 <b style="color:#b7b2a6">⟿ 표시로 접어</b> 최근 일이 잘 보이게 했습니다(먼 과거는 압축해 지각하는 시간 인지 특성 반영).</div>
+    <div class="axisnote">↔ 가로축은 시간. 내원이 없던 긴 공백은 <b style="color:#b7b2a6">⟿ 표시로 접어</b> 최근 일이 잘 보이게 했습니다(먼 과거는 압축해 지각하는 시간 인지 특성 반영). &nbsp;·&nbsp; 점·막대에 <b>마우스를 올리면(모바일은 탭)</b> 그날 무슨 일이었는지 뜹니다.</div>
     <div class="timemap" id="timemap"><div class="tm-inner" id="tmInner"></div></div>
     <div class="legend" id="legend"></div>
   </div>
@@ -249,22 +256,32 @@ function render(){
   let html = '';
   // axis
   let axis = '<div class="tm-axis">';
-  const ticks = [['2024-01-24','2024'],['2026-03-06','2026.3'],['2026-04-30','4.30'],[TODAY,'오늘']];
+  const ticks = [['2024-01-24','2024'],['2026-03-06','2026.3'],['2026-04-30','4.30'],[TODAY,'6.19']];
   ticks.forEach(([d,l])=>{ if(px(d)!=null) axis += `<div class="tm-tick" style="left:${px(d)}px;"><span class="lbl">${l}</span><span class="stem"></span></div>`; });
   SC.breaks.forEach(b=>{ const yrs=(b.d/365); axis += `<div class="tm-break" style="left:${b.x}px;">⟿<span class="cap">${yrs>=1?yrs.toFixed(1)+'년':b.d+'일'} 공백</span></div>`; });
   axis += `<div class="tm-now" style="left:${SC.nowX}px;"><span class="tag">오늘</span></div>`;
   axis += '</div>';
   html += axis;
   // rows
+  const esc = s => s.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
   ROWS.forEach(r=>{
     let track = '';
-    [r.bar, r.bar2].forEach(b=>{ if(!b) return;
-      const x1=px(b.from), x2=px(b.to); const v=PAL[b.type];
-      track += `<div class="tm-bar${b.dashed?' dashed':''}" style="left:${x1}px; width:${Math.max(x2-x1,20)}px; background:${v.c}; ${b.dashed?'border-color:'+v.c:''}" title="${b.label}"><span class="blab">${b.label}</span></div>`;
+    [r.bar, r.bar2].forEach((b,bi)=>{ if(!b) return;
+      const x1=px(b.from), x2=px(b.to); const v=PAL[b.type]; const w=Math.max(x2-x1,16);
+      const tip = `<span class='d'>${b.from} ~ ${b.to}</span><span class='c' style='background:${v.c}'></span>${b.label}`;
+      track += `<div class="tm-bar${b.dashed?' dashed':''}" style="left:${x1}px; width:${w}px; background:${v.c}; ${b.dashed?'border-color:'+v.c:''}"
+                  onmouseenter="showTip(event,'${esc(tip)}')" onmouseleave="hideTip()" onclick="showTip(event,'${esc(tip)}')">
+                  ${w>=78?`<span class="blab">${b.label}</span>`:''}</div>`;
+      // 짧은 막대엔 작은 캡션 — 첫 막대는 위, 둘째 막대는 아래로 엇갈려 충돌 방지
+      if(w<78) track += `<div class="tm-bcap" style="left:${x1}px; top:${bi?'37px':'5px'}; color:${b.dashed?'#7c3aed':v.c}">${b.label}</div>`;
     });
-    (r.dots||[]).forEach(d=>{ const v=PAL[d.type]; const x=px(d.date);
-      track += `<div class="tm-dot${d.flag?' flag':''}" style="left:${x}px; background:${v.c}" title="${d.date} · ${d.label}"></div>`;
-      track += `<div class="tm-evlab" style="left:${x+12}px;">${d.label}</div>`;
+    // 같은 날짜 점은 가로로 살짝 펼침
+    const byDate = {}; (r.dots||[]).forEach(d=>{ (byDate[d.date]=byDate[d.date]||[]).push(d); });
+    (r.dots||[]).forEach(d=>{ const v=PAL[d.type]; const grp=byDate[d.date]; const gi=grp.indexOf(d);
+      const off=(gi-(grp.length-1)/2)*17; const x=px(d.date)+off;
+      const tip = `<span class='d'>${d.date}</span><span class='c' style='background:${v.c}'></span>${d.label}`;
+      track += `<div class="tm-dot${d.flag?' flag':''}" style="left:${x}px; background:${v.c}"
+                  onmouseenter="showTip(event,'${esc(tip)}')" onmouseleave="hideTip()" onclick="showTip(event,'${esc(tip)}')"></div>`;
     });
     html += `<div class="tm-row">
       <div class="tm-rlabel"><span class="pos" style="color:${r.color}"><span class="posdot" style="background:${r.color}"></span>${r.pos}</span><div class="rname">${r.name}</div></div>
@@ -281,6 +298,24 @@ function render(){
   const tm = document.getElementById('timemap'); tm.scrollLeft = Math.max(0, SC.nowX-360);
 }
 render();
+
+/* ===== 툴팁 (호버·탭) ===== */
+let tipEl=null;
+function showTip(e, html){
+  if(!tipEl){ tipEl=document.createElement('div'); tipEl.className='tm-tip'; document.body.appendChild(tipEl); }
+  tipEl.innerHTML=html; tipEl.classList.add('on');
+  const pad=12, r=tipEl.getBoundingClientRect();
+  let x=e.clientX+14, y=e.clientY-r.height-10;
+  if(x+r.width>window.innerWidth-pad) x=window.innerWidth-pad-r.width;
+  if(x<pad) x=pad;
+  if(y<pad) y=e.clientY+20;
+  tipEl.style.left=x+'px'; tipEl.style.top=y+'px';
+  document.querySelectorAll('.tm-dot.hl').forEach(d=>d.classList.remove('hl'));
+  if(e.currentTarget.classList.contains('tm-dot')) e.currentTarget.classList.add('hl');
+}
+function hideTip(){ if(tipEl) tipEl.classList.remove('on'); document.querySelectorAll('.tm-dot.hl').forEach(d=>d.classList.remove('hl')); }
+document.addEventListener('click', e=>{ if(!e.target.closest('.tm-dot,.tm-bar')) hideTip(); });
+window.addEventListener('scroll', hideTip, true);
 
 /* ===== 관련자료 ===== */
 const REF = {"categories":[
